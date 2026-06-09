@@ -32,3 +32,26 @@ copy .env.example .env
 В `.env` заполните `BOT_TOKEN`, `JWT_SECRET`, `INTERNAL_SECRET`. Затем:
 
 ```bash
+npm run db:migrate
+npm run dev:api
+npm run dev:bot
+```
+
+`WEBAPP_URL` — публичный адрес Mini App. `ROUTER_ADDRESS` — адрес мастер-контракта после деплоя. Пока адреса нет, личный трекер просто сдвигает дату списания, а сетевой перевод не считается оплаченным.
+
+Полезные маршруты:
+
+- `POST /auth/telegram` — обмен проверенного `initData` на сессию
+- `GET/POST /subscriptions`
+- `POST /creators/plans`, `GET /creators/analytics`, `POST /creators/keys`, `POST /creators/invoices`
+- `POST /payments/chain` — ищет финализированную транзакцию на адрес роутера
+- `POST /internal/stars` — вызывает бот после оплаты Stars
+
+Напоминания и кик неплательщиков крутятся очередью BullMQ, если поднят Redis. Без Redis API оставляет обычный минутный таймер.
+
+## Проверки
+
+```bash
+npm test
+npm run build -w @subflow/tma
+```
