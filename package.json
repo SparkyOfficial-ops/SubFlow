@@ -1,0 +1,21 @@
+{
+  "name": "subflow",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SubFlow — центр подписок в Telegram: трекер, оплата в TON/USDT/Stars и кабинет автора.",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:tma": "npm run dev -w @subflow/tma",
+    "dev:api": "npm run dev -w @subflow/api",
+    "dev:bot": "npm run dev -w @subflow/bot",
+    "build": "npm run build -w @subflow/shared && npm run build -w @subflow/tma && npm run build -w @subflow/api && npm run build -w @subflow/bot",
+    "test": "npm run test -w @subflow/api",
+    "db:generate": "npm run generate -w @subflow/api",
+    "db:migrate": "npm run migrate -w @subflow/api"
+  }

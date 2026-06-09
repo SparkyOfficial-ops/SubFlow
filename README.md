@@ -55,3 +55,5 @@ npm run dev:bot
 npm test
 npm run build -w @subflow/tma
 ```
+
+Курс USD/EUR/UAH/TON на дашборде ориентировочный: он нужен для сводки, а не для проведения платежа.
