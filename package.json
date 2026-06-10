@@ -19,3 +19,4 @@
     "db:generate": "npm run generate -w @subflow/api",
     "db:migrate": "npm run migrate -w @subflow/api"
   }
+}
