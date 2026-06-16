@@ -32,3 +32,26 @@ export const USD_PER_UNIT: Record<MoneyCurrency, number> = {
 export const FREE_SUBSCRIPTION_LIMIT = 5;
 export const DEFAULT_NOTIFY_DAYS = [7, 3, 1] as const;
 export const DEFAULT_FEE_BPS = 150;
+export const GRACE_HOURS = 24;
+
+/** USDT jetton master в основной сети TON. */
+export const USDT_MASTER = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs";
+
+export function toUsd(amount: number, currency: MoneyCurrency): number {
+  return amount * USD_PER_UNIT[currency];
+}
+
+export function fromUsd(usd: number, currency: MoneyCurrency): number {
+  return usd / USD_PER_UNIT[currency];
+}
+
+export function convertMoney(amount: number, from: MoneyCurrency, to: MoneyCurrency): number {
+  return fromUsd(toUsd(amount, from), to);
+}
+
+export function periodDays(period: SubPeriod, customDays?: number | null): number {
+  switch (period) {
+    case "week":
+      return 7;
+    case "month":
+      return 30;
