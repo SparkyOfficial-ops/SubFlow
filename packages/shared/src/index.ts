@@ -78,3 +78,14 @@ export function addPeriod(from: Date, period: SubPeriod | PlanPeriod, customDays
   if (period === "week") next.setDate(next.getDate() + 7);
   else if (period === "month") next.setMonth(next.getMonth() + 1);
   else if (period === "quarter") next.setMonth(next.getMonth() + 3);
+  else if (period === "year") next.setFullYear(next.getFullYear() + 1);
+  else if (period === "forever") next.setFullYear(next.getFullYear() + 100);
+  else next.setDate(next.getDate() + Math.max(1, customDays ?? 30));
+  return next;
+}
+
+export function planDurationDays(period: PlanPeriod): number | null {
+  if (period === "month") return 30;
+  if (period === "quarter") return 90;
+  return null;
+}
