@@ -55,3 +55,26 @@ export function periodDays(period: SubPeriod, customDays?: number | null): numbe
       return 7;
     case "month":
       return 30;
+    case "quarter":
+      return 90;
+    case "year":
+      return 365;
+    case "custom":
+      return Math.max(1, customDays ?? 30);
+  }
+}
+
+export function annualized(amount: number, period: SubPeriod, customDays?: number | null): number {
+  return amount * (365 / periodDays(period, customDays));
+}
+
+export function monthlyEquivalent(amount: number, period: SubPeriod | PlanPeriod, customDays?: number | null): number {
+  if (period === "forever") return 0;
+  return annualized(amount, period, customDays) / 12;
+}
+
+export function addPeriod(from: Date, period: SubPeriod | PlanPeriod, customDays?: number | null): Date {
+  const next = new Date(from);
+  if (period === "week") next.setDate(next.getDate() + 7);
+  else if (period === "month") next.setMonth(next.getMonth() + 1);
+  else if (period === "quarter") next.setMonth(next.getMonth() + 3);
