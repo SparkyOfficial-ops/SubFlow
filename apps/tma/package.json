@@ -10,3 +10,23 @@
   },
   "dependencies": {
     "@subflow/shared": "*",
+    "@telegram-apps/sdk": "3.11.8",
+    "@telegram-apps/sdk-react": "3.3.9",
+    "@telegram-apps/telegram-ui": "2.1.13",
+    "@ton/core": "^0.59.1",
+    "@tonconnect/ui-react": "^2.1.0",
+    "buffer": "^6.0.3",
+    "i18next": "^24.2.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-i18next": "^15.4.1",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}
