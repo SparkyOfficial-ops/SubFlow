@@ -184,3 +184,26 @@ export const ru = {
     vpn: "Связь и VPN",
     telegram: "Telegram",
     other: "Другое",
+  } satisfies Record<Category, string>,
+  methods: {
+    card: "Карта",
+    ton: "TON",
+    usdt: "USDT",
+    stars: "Telegram Stars",
+    other: "Другое",
+  } satisfies Record<PaymentMethod, string>,
+  currencies: {
+    USD: "USD",
+    EUR: "EUR",
+    UAH: "UAH",
+    TON: "TON",
+    USDT: "USDT",
+    STARS: "Stars",
+  } satisfies Record<MoneyCurrency, string>,
+  display: {
+    USD: "Доллары",
+    EUR: "Евро",
+    UAH: "Гривны",
+    TON: "TON",
+  } satisfies Record<DisplayCurrency, string>,
+};
