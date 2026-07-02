@@ -207,3 +207,26 @@ export const ru = {
     TON: "TON",
   } satisfies Record<DisplayCurrency, string>,
 };
+
+export const en: typeof ru = {
+  appName: "SubFlow",
+  tabs: {
+    home: "Overview",
+    subs: "Subs",
+    calendar: "Calendar",
+    creator: "Creators",
+    profile: "Profile",
+  },
+  onboarding: {
+    skip: "Skip",
+    next: "Next",
+    start: "Open SubFlow",
+    slides: [
+      {
+        title: "Every charge on one screen",
+        text: "iCloud, ChatGPT, VPNs, TON DNS and private channels. A payment calendar, converted to USD, EUR, UAH or TON.",
+      },
+      {
+        title: "Renew with one confirmation",
+        text: "A day before the deadline the bot sends a ready invoice. You confirm it in your wallet. No card left on dozens of sites.",
+      },
