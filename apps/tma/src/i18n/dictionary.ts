@@ -391,3 +391,20 @@ export const en: typeof ru = {
     ton: "TON",
     usdt: "USDT",
     stars: "Telegram Stars",
+    other: "Other",
+  },
+  currencies: {
+    USD: "USD",
+    EUR: "EUR",
+    UAH: "UAH",
+    TON: "TON",
+    USDT: "USDT",
+    STARS: "Stars",
+  },
+  display: {
+    USD: "US dollars",
+    EUR: "Euro",
+    UAH: "Hryvnia",
+    TON: "TON",
+  },
+};
