@@ -27,3 +27,26 @@ export interface Subscription {
 }
 
 export interface SplitMember {
+  id: string;
+  name: string;
+  share: number;
+  status: "paid" | "pending";
+  isSelf?: boolean;
+}
+
+export interface SplitPool {
+  id: string;
+  subscriptionId: string;
+  organizerAddress?: string;
+  members: SplitMember[];
+}
+
+export interface CreatorPlan {
+  id: string;
+  title: string;
+  amount: number;
+  currency: "TON" | "USDT" | "STARS";
+  period: PlanPeriod;
+  chatId?: string;
+}
+
