@@ -50,3 +50,11 @@ export interface CreatorPlan {
   chatId?: string;
 }
 
+export type Tab = "home" | "subs" | "calendar" | "creator" | "profile";
+
+export type Route =
+  | { name: Tab }
+  | { name: "add" }
+  | { name: "detail"; id: string }
+  | { name: "split"; subscriptionId?: string }
+  | { name: "plan" };
