@@ -46,3 +46,26 @@ export interface ChargeEvent {
   at: string;
   amount: number;
   currency: MoneyCurrency;
+  kind: "charge" | "trial";
+  category: Category;
+}
+
+export function eventsBetween(subs: Subscription[], from: Date, to: Date): ChargeEvent[] {
+  const events: ChargeEvent[] = [];
+  for (const sub of subs) {
+    if (sub.status === "cancelled") continue;
+    if (sub.isTrial && sub.trialEndsAt) {
+      const trial = new Date(sub.trialEndsAt);
+      if (trial >= from && trial <= to) {
+        events.push({
+          id: `${sub.id}-trial`,
+          subscriptionId: sub.id,
+          name: sub.name,
+          color: sub.color,
+          emoji: sub.emoji,
+          at: sub.trialEndsAt,
+          amount: sub.amount,
+          currency: sub.currency,
+          kind: "trial",
+          category: sub.category,
+        });
