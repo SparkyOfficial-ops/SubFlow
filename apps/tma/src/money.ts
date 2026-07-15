@@ -23,3 +23,26 @@ export function formatMoney(amount: number, currency: MoneyCurrency | DisplayCur
       minimumFractionDigits: fraction,
     }).format(amount);
   } catch {
+    return `${amount.toFixed(fraction)} ${currency}`;
+  }
+}
+
+export function inDisplay(amount: number, from: MoneyCurrency, to: DisplayCurrency): number {
+  return convertMoney(amount, from, to);
+}
+
+export function shiftCharge(sub: Pick<Subscription, "nextChargeAt" | "period" | "customDays">, times = 1): string {
+  let cursor = new Date(sub.nextChargeAt);
+  for (let i = 0; i < times; i += 1) cursor = addPeriod(cursor, sub.period, sub.customDays);
+  return cursor.toISOString();
+}
+
+export interface ChargeEvent {
+  id: string;
+  subscriptionId: string;
+  name: string;
+  color: string;
+  emoji: string;
+  at: string;
+  amount: number;
+  currency: MoneyCurrency;
