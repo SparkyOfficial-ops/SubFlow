@@ -69,3 +69,26 @@ export function eventsBetween(subs: Subscription[], from: Date, to: Date): Charg
           kind: "trial",
           category: sub.category,
         });
+      }
+    }
+    if (sub.status !== "active") continue;
+    let cursor = new Date(sub.nextChargeAt);
+    let guard = 0;
+    while (cursor <= to && guard < 80) {
+      if (cursor >= from) {
+        events.push({
+          id: `${sub.id}-${cursor.toISOString()}`,
+          subscriptionId: sub.id,
+          name: sub.name,
+          color: sub.color,
+          emoji: sub.emoji,
+          at: cursor.toISOString(),
+          amount: sub.amount,
+          currency: sub.currency,
+          kind: "charge",
+          category: sub.category,
+        });
+      }
+      cursor = addPeriod(cursor, sub.period, sub.customDays);
+      guard += 1;
+    }
