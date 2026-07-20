@@ -92,3 +92,26 @@ export function eventsBetween(subs: Subscription[], from: Date, to: Date): Charg
       cursor = addPeriod(cursor, sub.period, sub.customDays);
       guard += 1;
     }
+  }
+  return events.sort((a, b) => a.at.localeCompare(b.at));
+}
+
+export function monthSpend(subs: Subscription[], display: DisplayCurrency, now = new Date()): number {
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  return eventsBetween(subs, start, end)
+    .filter((event) => event.kind === "charge")
+    .reduce((sum, event) => sum + inDisplay(event.amount, event.currency, display), 0);
+}
+
+export function yearForecast(subs: Subscription[], display: DisplayCurrency): number {
+  return subs
+    .filter((sub) => sub.status === "active")
+    .reduce((sum, sub) => sum + inDisplay(annualized(sub.amount, sub.period, sub.customDays), sub.currency, display), 0);
+}
+
+export function categoryTotals(subs: Subscription[], display: DisplayCurrency, now = new Date()) {
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const totals = new Map<Category, number>();
+  for (const event of eventsBetween(subs, start, end)) {
