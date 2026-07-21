@@ -138,3 +138,6 @@ export function formatLong(iso: string, locale: string): string {
   return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
 }
 
+export function methodNeedsChain(method: PaymentMethod): boolean {
+  return method === "ton" || method === "usdt";
+}
