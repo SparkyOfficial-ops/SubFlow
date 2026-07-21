@@ -115,3 +115,26 @@ export function categoryTotals(subs: Subscription[], display: DisplayCurrency, n
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
   const totals = new Map<Category, number>();
   for (const event of eventsBetween(subs, start, end)) {
+    if (event.kind !== "charge") continue;
+    totals.set(event.category, (totals.get(event.category) ?? 0) + inDisplay(event.amount, event.currency, display));
+  }
+  return [...totals.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+export function isoDateInput(iso: string): string {
+  return iso.slice(0, 10);
+}
+
+export function dateInputToIso(value: string): string {
+  const [year, month, day] = value.split("-").map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1, 12).toISOString();
+}
+
+export function formatDay(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short" });
+}
+
+export function formatLong(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
+}
+
