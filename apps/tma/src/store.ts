@@ -18,3 +18,26 @@ interface AppState {
   plans: CreatorPlan[];
   route: Route;
   finishOnboarding: () => void;
+  setRoute: (route: Route) => void;
+  setCurrency: (currency: DisplayCurrency) => void;
+  toggleNotify: (day: number) => void;
+  setPlus: (value: boolean) => void;
+  setWallet: (address?: string) => void;
+  canAdd: () => boolean;
+  addSubscription: (input: Omit<Subscription, "id" | "status">) => string | null;
+  updateSubscription: (id: string, patch: Partial<Subscription>) => void;
+  removeSubscription: (id: string) => void;
+  renewLocal: (id: string) => void;
+  loadDemo: () => void;
+  saveSplit: (pool: SplitPool) => void;
+  markShare: (poolId: string, memberId: string) => void;
+  savePlan: (plan: CreatorPlan) => void;
+  removePlan: (id: string) => void;
+}
+
+function uid(): string {
+  return crypto.randomUUID();
+}
+
+function daysFromNow(days: number): string {
+  const date = new Date();
