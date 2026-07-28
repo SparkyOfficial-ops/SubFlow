@@ -64,3 +64,26 @@ export const useAppStore = create<AppState>()(
         set((state) => {
           const has = state.notifyDays.includes(day);
           const notifyDays = has ? state.notifyDays.filter((item) => item !== day) : [...state.notifyDays, day].sort((a, b) => b - a);
+          return { notifyDays: notifyDays.length ? notifyDays : [day] };
+        }),
+      setPlus: (plus) => set({ plus }),
+      setWallet: (walletAddress) => set({ walletAddress }),
+      canAdd: () => {
+        const state = get();
+        if (state.plus) return true;
+        return state.subscriptions.filter((item) => item.status !== "cancelled").length < FREE_SUBSCRIPTION_LIMIT;
+      },
+      addSubscription: (input) => {
+        if (!get().canAdd()) return null;
+        const id = uid();
+        set((state) => ({ subscriptions: [{ ...input, id, status: "active" }, ...state.subscriptions] }));
+        return id;
+      },
+      updateSubscription: (id, patch) =>
+        set((state) => ({
+          subscriptions: state.subscriptions.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+        })),
+      removeSubscription: (id) =>
+        set((state) => ({
+          subscriptions: state.subscriptions.filter((item) => item.id !== id),
+          splits: state.splits.filter((pool) => pool.subscriptionId !== id),
