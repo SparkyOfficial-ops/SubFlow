@@ -41,3 +41,26 @@ function uid(): string {
 
 function daysFromNow(days: number): string {
   const date = new Date();
+  date.setDate(date.getDate() + days);
+  date.setHours(12, 0, 0, 0);
+  return date.toISOString();
+}
+
+export const useAppStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      onboarded: false,
+      displayCurrency: "USD",
+      notifyDays: [...NOTIFY],
+      plus: false,
+      subscriptions: [],
+      splits: [],
+      plans: [],
+      route: { name: "home" },
+      finishOnboarding: () => set({ onboarded: true }),
+      setRoute: (route) => set({ route }),
+      setCurrency: (displayCurrency) => set({ displayCurrency }),
+      toggleNotify: (day) =>
+        set((state) => {
+          const has = state.notifyDays.includes(day);
+          const notifyDays = has ? state.notifyDays.filter((item) => item !== day) : [...state.notifyDays, day].sort((a, b) => b - a);
