@@ -87,3 +87,26 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           subscriptions: state.subscriptions.filter((item) => item.id !== id),
           splits: state.splits.filter((pool) => pool.subscriptionId !== id),
+        })),
+      renewLocal: (id) =>
+        set((state) => ({
+          subscriptions: state.subscriptions.map((item) =>
+            item.id === id ? { ...item, status: "active", nextChargeAt: shiftCharge(item), isTrial: false } : item,
+          ),
+        })),
+      loadDemo: () =>
+        set((state) => {
+          if (state.subscriptions.length) return state;
+          const demo: Subscription[] = TEMPLATES.slice(0, 5).map((template, index) => ({
+            id: uid(),
+            name: template.name,
+            emoji: template.emoji,
+            color: template.color,
+            amount: template.amount,
+            currency: template.currency,
+            period: template.period,
+            nextChargeAt: daysFromNow([2, 6, 11, 18, 40][index] ?? 14),
+            paymentMethod: template.method,
+            category: template.category,
+            status: "active",
+            isTrial: index === 4,
