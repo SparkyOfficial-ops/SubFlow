@@ -110,3 +110,26 @@ export const useAppStore = create<AppState>()(
             category: template.category,
             status: "active",
             isTrial: index === 4,
+            trialEndsAt: index === 4 ? daysFromNow(4) : undefined,
+            templateId: template.id,
+          }));
+          return { subscriptions: demo };
+        }),
+      saveSplit: (pool) =>
+        set((state) => {
+          const rest = state.splits.filter((item) => item.subscriptionId !== pool.subscriptionId);
+          return { splits: [pool, ...rest] };
+        }),
+      markShare: (poolId, memberId) =>
+        set((state) => ({
+          splits: state.splits.map((pool) =>
+            pool.id === poolId
+              ? { ...pool, members: pool.members.map((member) => (member.id === memberId ? { ...member, status: "paid" } : member)) }
+              : pool,
+          ),
+        })),
+      savePlan: (plan) =>
+        set((state) => ({
+          plans: [plan, ...state.plans.filter((item) => item.id !== plan.id)],
+        })),
+      removePlan: (id) => set((state) => ({ plans: state.plans.filter((item) => item.id !== id) })),
