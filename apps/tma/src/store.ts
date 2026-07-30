@@ -133,3 +133,19 @@ export const useAppStore = create<AppState>()(
           plans: [plan, ...state.plans.filter((item) => item.id !== plan.id)],
         })),
       removePlan: (id) => set((state) => ({ plans: state.plans.filter((item) => item.id !== id) })),
+    }),
+    {
+      name: "subflow-v1",
+      partialize: (state) => ({
+        onboarded: state.onboarded,
+        displayCurrency: state.displayCurrency,
+        notifyDays: state.notifyDays,
+        plus: state.plus,
+        walletAddress: state.walletAddress,
+        subscriptions: state.subscriptions,
+        splits: state.splits,
+        plans: state.plans,
+      }),
+    },
+  ),
+);
