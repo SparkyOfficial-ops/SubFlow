@@ -28,3 +28,26 @@ export async function bootstrapTelegram(): Promise<void> {
   try {
     const sdk = await import("@telegram-apps/sdk-react");
     sdk.init();
+    if (sdk.themeParams.mount.isAvailable()) {
+      sdk.themeParams.mount();
+      sdk.themeParams.bindCssVars();
+    }
+    if (sdk.miniApp.mount.isAvailable()) {
+      sdk.miniApp.mount();
+      sdk.miniApp.bindCssVars();
+    }
+    if (sdk.viewport.mount.isAvailable()) {
+      await sdk.viewport.mount();
+      if (sdk.viewport.expand.isAvailable()) sdk.viewport.expand();
+      if (sdk.viewport.bindCssVars.isAvailable()) sdk.viewport.bindCssVars();
+    }
+    if (sdk.backButton.mount.isAvailable()) sdk.backButton.mount();
+    if (sdk.mainButton.mount.isAvailable()) sdk.mainButton.mount();
+    if (sdk.miniApp.ready.isAvailable()) sdk.miniApp.ready();
+    const user = sdk.initData.user();
+    runtime.userName = user?.first_name;
+    runtime.language = user?.language_code ?? runtime.language;
+  } catch (error) {
+    console.warn("Telegram SDK init failed", error);
+    webApp?.ready();
+    webApp?.expand();
