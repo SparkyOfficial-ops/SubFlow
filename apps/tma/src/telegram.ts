@@ -51,3 +51,20 @@ export async function bootstrapTelegram(): Promise<void> {
     console.warn("Telegram SDK init failed", error);
     webApp?.ready();
     webApp?.expand();
+  }
+}
+
+export async function haptic(kind: "tap" | "success" | "error"): Promise<void> {
+  const fallback = window.Telegram?.WebApp?.HapticFeedback;
+  try {
+    if (!runtime.inTelegram) return;
+    const { hapticFeedback } = await import("@telegram-apps/sdk-react");
+    if (kind === "tap" && hapticFeedback.impactOccurred.isAvailable()) hapticFeedback.impactOccurred("light");
+    if (kind === "success" && hapticFeedback.notificationOccurred.isAvailable()) hapticFeedback.notificationOccurred("success");
+    if (kind === "error" && hapticFeedback.notificationOccurred.isAvailable()) hapticFeedback.notificationOccurred("error");
+  } catch {
+    if (kind === "tap") fallback?.impactOccurred("light");
+    if (kind === "success") fallback?.notificationOccurred("success");
+    if (kind === "error") fallback?.notificationOccurred("error");
+  }
+}
