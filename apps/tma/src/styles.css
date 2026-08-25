@@ -21,3 +21,25 @@
     --hint: var(--tg-theme-hint-color, #7d8b99);
     --secondary: var(--tg-theme-secondary-bg-color, #17212b);
     --section: var(--tg-theme-section-bg-color, #17212b);
+    --button: var(--tg-theme-button-color, #5288c1);
+    --button-text: var(--tg-theme-button-text-color, #ffffff);
+    --link: var(--tg-theme-link-color, #6ab3f3);
+    --danger: var(--tg-theme-destructive-text-color, #ff6b6b);
+    --line: color-mix(in srgb, var(--text) 12%, transparent);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--secondary);
+  color: var(--text);
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+#root { max-width: 480px; margin: 0 auto; background: var(--bg); min-height: 100dvh; }
+
+.app {
+  min-height: 100dvh;
+  padding: calc(12px + env(safe-area-inset-top)) 16px calc(88px + env(safe-area-inset-bottom));
