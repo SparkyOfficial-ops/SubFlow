@@ -87,3 +87,25 @@ button { cursor: pointer; }
   background: var(--secondary);
   border-radius: 999px;
   padding: 8px 12px;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.section { margin-top: 22px; }
+.section h2 { margin: 0 0 10px; font-size: 15px; color: var(--hint); font-weight: 600; }
+
+.rail { display: flex; flex-direction: column; gap: 8px; }
+.rail-item, .row, .plan, .template {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: var(--section);
+  border-radius: 16px;
+  padding: 12px;
+}
+.rail-item, .row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
