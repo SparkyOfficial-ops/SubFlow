@@ -43,3 +43,25 @@ button { cursor: pointer; }
 .app {
   min-height: 100dvh;
   padding: calc(12px + env(safe-area-inset-top)) 16px calc(88px + env(safe-area-inset-bottom));
+}
+.app.with-action { padding-bottom: calc(148px + env(safe-area-inset-bottom)); }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.topbar h1, .screen-title {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
+.icon-btn, .text-btn {
+  border: 0;
+  background: var(--secondary);
+  color: var(--link);
+  border-radius: 999px;
+}
+.icon-btn { width: 36px; height: 36px; display: grid; place-items: center; }
+.text-btn { padding: 8px 12px; background: transparent; }
