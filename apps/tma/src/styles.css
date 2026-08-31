@@ -109,3 +109,25 @@ button { cursor: pointer; }
   height: 36px;
   border-radius: 12px;
   display: grid;
+  place-items: center;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+}
+.row-title, .plan b { display: block; font-size: 15px; }
+.row-meta, .muted { color: var(--hint); font-size: 13px; }
+.amount { font-variant-numeric: tabular-nums; font-weight: 650; font-size: 14px; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: color-mix(in srgb, var(--link) 16%, transparent);
+  color: var(--link);
+  font-size: 12px;
+  margin-left: 6px;
+}
+.badge.warn { background: color-mix(in srgb, #e5a000 20%, transparent); color: #b78103; }
+
+.cat { margin-bottom: 10px; }
+.cat-row, .spread { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
