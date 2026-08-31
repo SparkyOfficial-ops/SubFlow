@@ -131,3 +131,25 @@ button { cursor: pointer; }
 
 .cat { margin-bottom: 10px; }
 .cat-row, .spread { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.track { margin-top: 6px; height: 6px; border-radius: 99px; background: var(--secondary); overflow: hidden; }
+.fill { height: 100%; border-radius: inherit; }
+
+.tabs {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: min(480px, 100%);
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--section) 92%, transparent);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+}
+.tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--hint);
+  display: flex;
+  flex-direction: column;
