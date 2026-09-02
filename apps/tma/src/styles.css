@@ -241,3 +241,9 @@ button { cursor: pointer; }
 .error { color: var(--danger); font-size: 13px; margin-top: 8px; }
 .notice {
   margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--secondary);
+  color: var(--hint);
+  font-size: 13px;
+}
