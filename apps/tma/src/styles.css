@@ -219,3 +219,25 @@ button { cursor: pointer; }
   width: min(480px, 100%);
   background: var(--bg);
   border-radius: 22px 22px 0 0;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+}
+.sheet-card h3 { margin: 0 0 8px; }
+.skel {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--secondary), color-mix(in srgb, var(--section) 40%, var(--secondary)), var(--secondary));
+  background-size: 200% 100%;
+  animation: shine 1.2s infinite;
+}
+@keyframes shine { to { background-position: -200% 0; } }
+
+.slides { display: flex; flex-direction: column; min-height: calc(100dvh - 120px); }
+.art { height: 180px; display: grid; place-items: center; }
+.dots { display: flex; gap: 6px; justify-content: center; margin: 18px 0; }
+.dots i { width: 6px; height: 6px; border-radius: 99px; background: var(--line); display: block; }
+.dots i.on { width: 16px; background: var(--link); }
+.group { margin-top: 8px; }
+.group-label { margin: 16px 4px 8px; color: var(--hint); font-size: 13px; }
+.error { color: var(--danger); font-size: 13px; margin-top: 8px; }
+.notice {
+  margin-top: 12px;
