@@ -36,3 +36,25 @@ export function useTelegramChrome(back: (() => void) | undefined, action: Action
     });
     return () => {
       stop = true;
+      offBack();
+      offMain();
+    };
+  }, [Boolean(back), action?.text, action?.disabled]);
+}
+
+export function Mark({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="mark" style={{ background: color }}>
+      {label.slice(0, 2)}
+    </span>
+  );
+}
+
+export function ActionBar({ text, disabled, onClick }: Action) {
+  if (runtime.inTelegram) return null;
+  return (
+    <div className="action-bar">
+      <button type="button" disabled={disabled} onClick={onClick}>
+        {text}
+      </button>
+    </div>
