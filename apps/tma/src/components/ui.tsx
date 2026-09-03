@@ -58,3 +58,5 @@ export function ActionBar({ text, disabled, onClick }: Action) {
         {text}
       </button>
     </div>
+  );
+}
