@@ -18,3 +18,25 @@ function Icon({ name }: { name: Tab }) {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
       {paths[name]}
     </svg>
+  );
+}
+
+export function TabBar() {
+  const { t } = useTranslation();
+  const route = useAppStore((state) => state.route);
+  const setRoute = useAppStore((state) => state.setRoute);
+  const current = route.name === "add" || route.name === "detail" || route.name === "split" || route.name === "plan" ? "subs" : route.name;
+  return (
+    <nav className="tabs">
+      {TABS.map((tab) => (
+        <button
+          type="button"
+          key={tab}
+          className={current === tab ? "active" : ""}
+          onClick={() => {
+            void haptic("tap");
+            setRoute({ name: tab });
+          }}
+        >
+          <Icon name={tab} />
+          {t(`tabs.${tab}`)}
