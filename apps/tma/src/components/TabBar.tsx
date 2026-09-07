@@ -40,3 +40,8 @@ export function TabBar() {
         >
           <Icon name={tab} />
           {t(`tabs.${tab}`)}
+        </button>
+      ))}
+    </nav>
+  );
+}
