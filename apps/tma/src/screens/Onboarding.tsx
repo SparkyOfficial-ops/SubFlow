@@ -37,3 +37,25 @@ export function Onboarding() {
 
   return (
     <div className="app">
+      <div className="topbar">
+        <strong>SubFlow</strong>
+        <button type="button" className="text-btn" style={{ marginLeft: "auto" }} onClick={finish}>
+          {t("onboarding.skip")}
+        </button>
+      </div>
+      <div className="slides">
+        <div className="art">{ARTS[index]}</div>
+        <h1 className="screen-title">{slides[index]?.title}</h1>
+        <p className="hero-sub">{slides[index]?.text}</p>
+        <div className="dots">
+          {slides.map((slide, dot) => (
+            <i key={slide.title} className={dot === index ? "on" : ""} />
+          ))}
+        </div>
+      </div>
+      <Button size="l" stretched onClick={go}>
+        {last ? t("onboarding.start") : t("onboarding.next")}
+      </Button>
+    </div>
+  );
+}
