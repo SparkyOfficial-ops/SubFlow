@@ -20,3 +20,25 @@ export function Dashboard() {
   const upcoming = useMemo(() => {
     const end = new Date();
     end.setDate(end.getDate() + 45);
+    return eventsBetween(subs, new Date(), end).filter((event) => event.kind === "charge").slice(0, 5);
+  }, [subs]);
+  const cats = categoryTotals(subs, currency);
+  const max = cats[0]?.[1] || 1;
+  const trials = subs.filter((sub) => sub.isTrial && sub.trialEndsAt && sub.status === "active");
+
+  if (!subs.length) {
+    return (
+      <Placeholder header={t("dash.emptyTitle")} description={t("dash.emptyText")}>
+        <div className="stack" style={{ width: "100%" }}>
+          <button type="button" className="primary" onClick={() => setRoute({ name: "add" })}>
+            {t("dash.add")}
+          </button>
+          <button type="button" className="ghost" onClick={() => { void haptic("tap"); loadDemo(); }}>
+            {t("dash.demo")}
+          </button>
+        </div>
+      </Placeholder>
+    );
+  }
+
+  return (
