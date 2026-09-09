@@ -64,3 +64,25 @@ export function Dashboard() {
                 <Mark color={sub.color} label={sub.emoji} />
                 <span>
                   <span className="row-title">{sub.name}</span>
+                  <span className="row-meta">{formatDay(sub.trialEndsAt!, i18n.language)}</span>
+                </span>
+                <span className="badge warn">{formatDay(sub.trialEndsAt!, i18n.language)}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="section">
+        <h2>{t("dash.upcoming")}</h2>
+        <div className="rail">
+          {upcoming.map((event) => (
+            <button type="button" className="rail-item" key={event.id} onClick={() => setRoute({ name: "detail", id: event.subscriptionId })}>
+              <Mark color={event.color} label={event.emoji} />
+              <span>
+                <span className="row-title">{event.name}</span>
+                <span className="row-meta">{formatDay(event.at, i18n.language)}</span>
+              </span>
+              <span className="amount">{formatMoney(inDisplay(event.amount, event.currency, currency), currency)}</span>
+            </button>
+          ))}
