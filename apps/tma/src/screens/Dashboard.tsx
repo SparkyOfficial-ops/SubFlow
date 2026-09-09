@@ -42,3 +42,25 @@ export function Dashboard() {
   }
 
   return (
+    <div>
+      <div className="hero">
+        <p className="eyebrow">{t("dash.month")}</p>
+        <h1 className="hero-sum">{formatMoney(month, currency)}</h1>
+        <p className="hero-sub">
+          {t("dash.year")}: {formatMoney(year, currency)}
+        </p>
+        <button type="button" className="wallet-chip" onClick={() => setRoute({ name: "profile" })}>
+          {wallet ? `${wallet.slice(0, 4)}…${wallet.slice(-4)}` : t("profile.connect")}
+        </button>
+      </div>
+      <p className="notice">{t("dash.rates", { currency })}</p>
+
+      {!!trials.length && (
+        <section className="section">
+          <h2>{t("dash.trials")}</h2>
+          <div className="rail">
+            {trials.map((sub) => (
+              <button type="button" className="rail-item" key={sub.id} onClick={() => setRoute({ name: "detail", id: sub.id })}>
+                <Mark color={sub.color} label={sub.emoji} />
+                <span>
+                  <span className="row-title">{sub.name}</span>
