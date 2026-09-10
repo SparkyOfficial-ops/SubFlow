@@ -86,3 +86,24 @@ export function Dashboard() {
               <span className="amount">{formatMoney(inDisplay(event.amount, event.currency, currency), currency)}</span>
             </button>
           ))}
+        </div>
+      </section>
+
+      <section className="section">
+        <h2>{t("dash.categories")}</h2>
+        {cats.map(([category, value]) => (
+          <div className="cat" key={category}>
+            <div className="cat-row">
+              <span>{t(`categories.${category}`)}</span>
+              <span>{formatMoney(value, currency)}</span>
+            </div>
+            <div className="track">
+              <div className="fill" style={{ width: `${(value / max) * 100}%`, background: CATEGORY_COLOR[category] }} />
+            </div>
+          </div>
+        ))}
+        {!cats.length && <p className="muted">{t("dash.paused")}</p>}
+      </section>
+    </div>
+  );
+}
