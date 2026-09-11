@@ -43,3 +43,25 @@ export function Subscriptions() {
       <div className="rail" style={{ marginTop: 12 }}>
         {visible.map((sub) => (
           <button type="button" className="row" key={sub.id} onClick={() => setRoute({ name: "detail", id: sub.id })}>
+            <Mark color={sub.color} label={sub.emoji} />
+            <span>
+              <span className="row-title">
+                {sub.name}
+                {sub.status === "paused" && <span className="badge">{t("dash.paused")}</span>}
+              </span>
+              <span className="row-meta">{t(`periods.${sub.period}`)}</span>
+            </span>
+            <span className="amount">{formatMoney(inDisplay(sub.amount, sub.currency, currency), currency)}</span>
+          </button>
+        ))}
+        {!visible.length && <p className="muted">{t("subs.empty")}</p>}
+      </div>
+      {limit && (
+        <div className="sheet" onClick={() => setLimit(false)}>
+          <div className="sheet-card" onClick={(event) => event.stopPropagation()}>
+            <h3>{t("subs.limitTitle")}</h3>
+            <p className="muted">{t("subs.limitText")}</p>
+            <div className="stack">
+              <button type="button" className="primary" onClick={() => setLimit(false)}>
+                {t("subs.later")}
+              </button>
