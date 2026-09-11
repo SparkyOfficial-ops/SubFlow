@@ -21,3 +21,25 @@ export function Subscriptions() {
       setLimit(true);
       return;
     }
+    setRoute({ name: "add" });
+  };
+
+  return (
+    <div>
+      <div className="topbar">
+        <h1>{t("subs.title")}</h1>
+        <button type="button" className="text-btn" style={{ marginLeft: "auto" }} onClick={add}>
+          +
+        </button>
+      </div>
+      <div className="chips">
+        <button type="button" className={archive ? "chip" : "chip on"} onClick={() => setArchive(false)}>
+          {t("subs.active")}
+        </button>
+        <button type="button" className={archive ? "chip on" : "chip"} onClick={() => setArchive(true)}>
+          {t("subs.archive")}
+        </button>
+      </div>
+      <div className="rail" style={{ marginTop: 12 }}>
+        {visible.map((sub) => (
+          <button type="button" className="row" key={sub.id} onClick={() => setRoute({ name: "detail", id: sub.id })}>
