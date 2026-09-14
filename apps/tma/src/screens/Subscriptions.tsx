@@ -65,3 +65,10 @@ export function Subscriptions() {
               <button type="button" className="primary" onClick={() => setLimit(false)}>
                 {t("subs.later")}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
