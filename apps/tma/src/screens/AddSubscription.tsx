@@ -35,3 +35,25 @@ export function AddSubscription() {
   const [trialDate, setTrialDate] = useState(date);
   const [error, setError] = useState("");
 
+  const apply = (id: string) => {
+    const next = TEMPLATES.find((item) => item.id === id);
+    if (!next) return;
+    setTemplateId(id);
+    setName(next.name);
+    setAmount(String(next.amount));
+    setCurrency(next.currency);
+    setPeriod(next.period);
+    setCategory(next.category);
+    setMethod(next.method);
+  };
+
+  const save = () => {
+    const value = Number(amount);
+    if (!name.trim() || !value || !date) {
+      setError(t("add.required"));
+      void haptic("error");
+      return;
+    }
+    const id = add({
+      name: name.trim(),
+      emoji: template?.emoji ?? name.trim().slice(0, 1).toUpperCase(),
