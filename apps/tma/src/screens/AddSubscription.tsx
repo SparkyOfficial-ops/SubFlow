@@ -79,3 +79,25 @@ export function AddSubscription() {
   };
 
   useTelegramChrome(() => setRoute({ name: "subs" }), { text: t("add.save"), onClick: save });
+
+  return (
+    <div>
+      <div className="topbar">
+        <button type="button" className="icon-btn" onClick={() => setRoute({ name: "subs" })}>
+          ←
+        </button>
+        <h1>{t("add.title")}</h1>
+      </div>
+      <p className="eyebrow">{t("add.templates")}</p>
+      <div className="templates">
+        {TEMPLATES.map((item) => (
+          <button type="button" key={item.id} className={item.id === templateId ? "template active" : "template"} onClick={() => apply(item.id)}>
+            <span className="mark" style={{ background: item.color, width: 28, height: 28 }}>{item.emoji}</span>
+            <span className="row-meta" style={{ display: "block", marginTop: 8 }}>{item.name}</span>
+          </button>
+        ))}
+      </div>
+      <label className="field">{t("add.name")}<input value={name} onChange={(event) => setName(event.target.value)} /></label>
+      <label className="field">{t("add.amount")}<input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
+      <label className="field">
+        {t("add.currency")}
