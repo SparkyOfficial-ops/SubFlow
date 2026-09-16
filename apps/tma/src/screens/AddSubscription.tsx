@@ -123,3 +123,21 @@ export function AddSubscription() {
         <select value={category} onChange={(event) => setCategory(event.target.value as Category)}>
           {CATEGORIES.map((item) => <option key={item} value={item}>{t(`categories.${item}`)}</option>)}
         </select>
+      </label>
+      <label className="field">
+        {t("add.method")}
+        <select value={method} onChange={(event) => setMethod(event.target.value as PaymentMethod)}>
+          {PAYMENT_METHODS.map((item) => <option key={item} value={item}>{t(`methods.${item}`)}</option>)}
+        </select>
+      </label>
+      <label className="field">{t("add.note")}<textarea value={note} onChange={(event) => setNote(event.target.value)} /></label>
+      <label className="check">
+        {t("add.trial")}
+        <input type="checkbox" checked={trial} onChange={(event) => setTrial(event.target.checked)} />
+      </label>
+      {trial && <label className="field">{t("add.trialDate")}<input type="date" value={trialDate} onChange={(event) => setTrialDate(event.target.value)} /></label>}
+      {error && <p className="error">{error}</p>}
+      <ActionBar text={t("add.save")} onClick={save} />
+    </div>
+  );
+}
