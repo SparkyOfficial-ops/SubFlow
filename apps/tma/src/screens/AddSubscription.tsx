@@ -57,3 +57,25 @@ export function AddSubscription() {
     const id = add({
       name: name.trim(),
       emoji: template?.emoji ?? name.trim().slice(0, 1).toUpperCase(),
+      color: template?.color ?? "#5b6b7c",
+      amount: value,
+      currency,
+      period,
+      customDays: period === "custom" ? Number(customDays) || 30 : undefined,
+      nextChargeAt: dateInputToIso(date),
+      paymentMethod: method,
+      category,
+      note: note.trim() || undefined,
+      isTrial: trial,
+      trialEndsAt: trial ? dateInputToIso(trialDate) : undefined,
+      templateId: template?.id,
+    });
+    if (!id) {
+      setError(t("subs.limitText"));
+      return;
+    }
+    void haptic("success");
+    setRoute({ name: "detail", id });
+  };
+
+  useTelegramChrome(() => setRoute({ name: "subs" }), { text: t("add.save"), onClick: save });
