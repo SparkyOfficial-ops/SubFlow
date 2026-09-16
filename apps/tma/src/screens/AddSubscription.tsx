@@ -101,3 +101,25 @@ export function AddSubscription() {
       <label className="field">{t("add.amount")}<input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
       <label className="field">
         {t("add.currency")}
+        <select value={currency} onChange={(event) => setCurrency(event.target.value as MoneyCurrency)}>
+          {MONEY_CURRENCIES.map((item) => <option key={item} value={item}>{t(`currencies.${item}`)}</option>)}
+        </select>
+      </label>
+      <label className="field">
+        {t("add.period")}
+        <select value={period} onChange={(event) => setPeriod(event.target.value as SubPeriod)}>
+          {SUB_PERIODS.map((item) => <option key={item} value={item}>{t(`periods.${item}`)}</option>)}
+        </select>
+      </label>
+      {period === "custom" && (
+        <label className="field">
+          {t("periods.custom")}
+          <input inputMode="numeric" value={customDays} onChange={(event) => setCustomDays(event.target.value)} />
+        </label>
+      )}
+      <label className="field">{t("add.date")}<input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+      <label className="field">
+        {t("add.category")}
+        <select value={category} onChange={(event) => setCategory(event.target.value as Category)}>
+          {CATEGORIES.map((item) => <option key={item} value={item}>{t(`categories.${item}`)}</option>)}
+        </select>
