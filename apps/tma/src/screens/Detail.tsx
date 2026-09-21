@@ -46,3 +46,24 @@ export function SubscriptionDetail({ id }: { id: string }) {
       <div className="stack" style={{ marginTop: 18 }}>
         {sub.status === "active" && (
           <button type="button" className="ghost" onClick={() => { update(sub.id, { status: "paused" }); void haptic("tap"); }}>
+            {t("detail.pause")}
+          </button>
+        )}
+        {sub.status === "paused" && (
+          <button type="button" className="ghost" onClick={() => update(sub.id, { status: "active" })}>{t("detail.resume")}</button>
+        )}
+        {sub.status !== "cancelled" ? (
+          <button type="button" className="ghost" onClick={() => { update(sub.id, { status: "cancelled" }); void haptic("tap"); }}>
+            {t("detail.cancel")}
+          </button>
+        ) : (
+          <button type="button" className="ghost" onClick={() => update(sub.id, { status: "active" })}>{t("detail.restore")}</button>
+        )}
+        <button type="button" className="ghost" onClick={() => setRoute({ name: "split", subscriptionId: sub.id })}>{t("split.create")}</button>
+        <button type="button" className="danger" onClick={() => { remove(sub.id); back(); }}>{t("detail.remove")}</button>
+      </div>
+      {sub.status === "active" && <ActionBar text={t("detail.renew")} onClick={() => setPay(true)} />}
+      {pay && <PaySheet subscription={sub} onClose={() => setPay(false)} />}
+    </div>
+  );
+}
