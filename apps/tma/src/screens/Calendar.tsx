@@ -21,3 +21,25 @@ export function CalendarScreen() {
   }, [subs]);
 
   return (
+    <div>
+      <h1 className="screen-title">{t("calendar.title")}</h1>
+      {!groups.length && <p className="muted">{t("calendar.empty")}</p>}
+      {groups.map(([day, events]) => (
+        <div className="group" key={day}>
+          <div className="group-label">{formatDay(events[0].at, i18n.language)}</div>
+          <div className="rail">
+            {events.map((event) => (
+              <button type="button" className="row" key={event.id} onClick={() => setRoute({ name: "detail", id: event.subscriptionId })}>
+                <Mark color={event.color} label={event.emoji} />
+                <span>
+                  <span className="row-title">{event.name}</span>
+                  {event.kind === "trial" && <span className="row-meta">{t("calendar.trial")}</span>}
+                </span>
+                <span className="amount">{formatMoney(event.amount, event.currency)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
