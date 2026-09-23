@@ -41,3 +41,25 @@ export function PaySheet({ subscription, onClose }: { subscription: Subscription
       const payload = beginCell().storeUint(0, 32).storeStringTail(comment).endCell().toBoc().toString("base64");
       const result = await tonConnect.sendTransaction({
         validUntil: Math.floor(Date.now() / 1000) + 600,
+        messages: [{ address: router, amount: toNano(subscription.amount).toString(), payload }],
+      });
+      await submitChainPayment({ txHash: result.boc, comment, currency: "TON" });
+      setMessage(t("pay.sent"));
+      void haptic("success");
+    } catch {
+      setMessage(t("pay.failed"));
+      void haptic("error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const payUsdt = async () => {
+    if (!wallet) {
+      setMessage(t("pay.connectFirst"));
+      await tonConnect.openModal();
+      return;
+    }
+    if (!router) {
+      setMessage(t("pay.noRouter"));
+      return;
