@@ -85,3 +85,25 @@ export function PaySheet({ subscription, onClose }: { subscription: Subscription
         .endCell()
         .toBoc()
         .toString("base64");
+      const result = await tonConnect.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 600,
+        messages: [{ address: jettonWallet, amount: toNano("0.08").toString(), payload: transfer }],
+      });
+      await submitChainPayment({ txHash: result.boc, comment, currency: "USDT" });
+      setMessage(t("pay.sent"));
+      void haptic("success");
+    } catch {
+      setMessage(t("pay.failed"));
+      void haptic("error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="sheet" onClick={onClose}>
+      <div className="sheet-card" onClick={(event) => event.stopPropagation()}>
+        <h3>{t("pay.title")}</h3>
+        <p className="hero-sum" style={{ fontSize: 28 }}>{formatMoney(subscription.amount, subscription.currency)}</p>
+        <p className="muted">{subscription.name}</p>
+        <p className="notice">{t("pay.comment", { comment })}</p>
