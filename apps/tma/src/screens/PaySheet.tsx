@@ -63,3 +63,25 @@ export function PaySheet({ subscription, onClose }: { subscription: Subscription
     if (!router) {
       setMessage(t("pay.noRouter"));
       return;
+    }
+    setBusy(true);
+    try {
+      const master = import.meta.env.VITE_USDT_MASTER || USDT_MASTER;
+      const info = await fetch(`https://tonapi.io/v2/accounts/${wallet.account.address}/jettons/${encodeURIComponent(master)}`);
+      if (!info.ok) throw new Error("jetton");
+      const body = (await info.json()) as { wallet_address?: { address?: string } };
+      const jettonWallet = body.wallet_address?.address;
+      if (!jettonWallet) throw new Error("wallet");
+      const transfer = beginCell()
+        .storeUint(0x0f8a7ea5, 32)
+        .storeUint(0, 64)
+        .storeCoins(BigInt(Math.round(subscription.amount * 1_000_000)))
+        .storeAddress(Address.parse(router))
+        .storeAddress(Address.parse(wallet.account.address))
+        .storeBit(0)
+        .storeCoins(toNano("0.05"))
+        .storeBit(1)
+        .storeRef(beginCell().storeUint(0, 32).storeStringTail(comment).endCell())
+        .endCell()
+        .toBoc()
+        .toString("base64");
