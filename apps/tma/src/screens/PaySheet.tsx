@@ -107,3 +107,19 @@ export function PaySheet({ subscription, onClose }: { subscription: Subscription
         <p className="hero-sum" style={{ fontSize: 28 }}>{formatMoney(subscription.amount, subscription.currency)}</p>
         <p className="muted">{subscription.name}</p>
         <p className="notice">{t("pay.comment", { comment })}</p>
+        {!runtime.inTelegram && <p className="notice">{t("profile.outside")}</p>}
+        <div className="stack" style={{ marginTop: 12 }}>
+          {subscription.currency === "TON" && (
+            <button type="button" className="primary" disabled={busy} onClick={() => void payTon()}>{t("pay.ton")}</button>
+          )}
+          {subscription.currency === "USDT" && (
+            <button type="button" className="primary" disabled={busy} onClick={() => void payUsdt()}>{t("pay.usdt")}</button>
+          )}
+          <button type="button" className="ghost" onClick={markLocal}>{t("detail.renew")}</button>
+          <button type="button" className="text-btn" onClick={onClose}>{t("subs.later")}</button>
+        </div>
+        {message && <p className="notice">{message}</p>}
+      </div>
+    </div>
+  );
+}
