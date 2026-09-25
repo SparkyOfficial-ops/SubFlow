@@ -48,3 +48,25 @@ export function SplitPay({ subscriptionId }: { subscriptionId?: string }) {
     const share = Number((sub.amount / count).toFixed(2));
     saveSplit({
       ...pool,
+      members: [
+        ...pool.members.map((member) => ({ ...member, share, status: member.isSelf ? "paid" as const : member.status })),
+        { id: crypto.randomUUID(), name: friend.trim(), share, status: "pending" },
+      ],
+    });
+    setFriend("");
+  };
+
+  const payShare = async (memberId: string, share: number) => {
+    if (!pool || !sub) return;
+    if (sub.currency !== "TON") {
+      markShare(pool.id, memberId);
+      void haptic("success");
+      return;
+    }
+    if (!pool.organizerAddress) {
+      setNote(t("split.noWallet"));
+      if (!connected) await tonConnect.openModal();
+      return;
+    }
+    if (!connected) {
+      await tonConnect.openModal();
