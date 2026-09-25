@@ -26,3 +26,25 @@ export function SplitPay({ subscriptionId }: { subscriptionId?: string }) {
   const bot = import.meta.env.VITE_BOT_USERNAME || "SubFlowBot";
   const link = pool ? `https://t.me/${bot}/app?startapp=split_${pool.id}` : "";
 
+  const create = () => {
+    if (!sub) return;
+    const selfShare = Number((sub.amount / 2).toFixed(2));
+      saveSplit({
+        id: crypto.randomUUID(),
+        subscriptionId: sub.id,
+        organizerAddress: connected?.account.address ?? wallet,
+        members: [
+        { id: crypto.randomUUID(), name: t("split.you"), share: selfShare, status: "paid", isSelf: true },
+        { id: crypto.randomUUID(), name: friend.trim() || "2", share: Number((sub.amount - selfShare).toFixed(2)), status: "pending" },
+      ],
+    });
+    setFriend("");
+    void haptic("success");
+  };
+
+  const addFriend = () => {
+    if (!pool || !friend.trim() || !sub) return;
+    const count = pool.members.length + 1;
+    const share = Number((sub.amount / count).toFixed(2));
+    saveSplit({
+      ...pool,
