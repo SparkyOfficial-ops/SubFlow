@@ -70,3 +70,25 @@ export function SplitPay({ subscriptionId }: { subscriptionId?: string }) {
     }
     if (!connected) {
       await tonConnect.openModal();
+      return;
+    }
+    if (connected.account.address === pool.organizerAddress) {
+      markShare(pool.id, memberId);
+      void haptic("success");
+      return;
+    }
+    try {
+      const payload = beginCell().storeUint(0, 32).storeStringTail(`split_${pool.id}`).endCell().toBoc().toString("base64");
+      await tonConnect.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 600,
+        messages: [{ address: pool.organizerAddress, amount: toNano(share).toString(), payload }],
+      });
+      markShare(pool.id, memberId);
+      void haptic("success");
+    } catch {
+      void haptic("error");
+    }
+  };
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(link);
