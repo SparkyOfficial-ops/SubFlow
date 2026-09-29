@@ -92,3 +92,25 @@ export function SplitPay({ subscriptionId }: { subscriptionId?: string }) {
 
   const copy = async () => {
     await navigator.clipboard.writeText(link);
+    setNote(t("split.copied"));
+    void haptic("tap");
+  };
+
+  return (
+    <div>
+      <div className="topbar">
+        <button type="button" className="icon-btn" onClick={() => setRoute({ name: "home" })}>←</button>
+        <h1>{t("split.title")}</h1>
+      </div>
+      <p className="muted">{t("split.lead")}</p>
+      <label className="field">
+        {t("subs.title")}
+        <select value={picked} onChange={(event) => setPicked(event.target.value)}>
+          {subs.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </select>
+      </label>
+      {!sub && <p className="notice">{t("split.empty")}</p>}
+      {sub && !pool && (
+        <div className="stack" style={{ marginTop: 12 }}>
+          <button type="button" className="primary" onClick={create}>{t("split.create")}</button>
+        </div>
