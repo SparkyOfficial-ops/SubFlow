@@ -114,3 +114,25 @@ export function SplitPay({ subscriptionId }: { subscriptionId?: string }) {
         <div className="stack" style={{ marginTop: 12 }}>
           <button type="button" className="primary" onClick={create}>{t("split.create")}</button>
         </div>
+      )}
+      {sub && pool && (
+        <>
+          <section className="section">
+            <h2>{t("split.members")}</h2>
+            <div className="rail">
+              {pool.members.map((member) => (
+                <div className="row" key={member.id}>
+                  <Mark color={sub.color} label={member.name} />
+                  <span>
+                    <span className="row-title">{member.name}</span>
+                    <span className="row-meta">{member.status === "paid" ? t("split.paid") : t("split.pending")}</span>
+                  </span>
+                  <span className="amount">{formatMoney(member.share, sub.currency)}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+          <label className="field">
+            {t("split.addFriend")}
+            <input value={friend} onChange={(event) => setFriend(event.target.value)} />
+          </label>
