@@ -136,3 +136,20 @@ export function SplitPay({ subscriptionId }: { subscriptionId?: string }) {
             {t("split.addFriend")}
             <input value={friend} onChange={(event) => setFriend(event.target.value)} />
           </label>
+          <div className="stack" style={{ marginTop: 12 }}>
+            <button type="button" className="ghost" onClick={addFriend}>{t("split.add")}</button>
+            <button type="button" className="ghost" onClick={() => void copy()}>{t("split.copy")}</button>
+            {pool.members.filter((member) => !member.isSelf && member.status === "pending").map((member) => (
+              <button type="button" className="primary" key={member.id} onClick={() => void payShare(member.id, member.share)}>
+                {t("split.pay")} · {member.name}
+              </button>
+            ))}
+          </div>
+          <p className="notice">{link}</p>
+        </>
+      )}
+      {note && <p className="notice">{note}</p>}
+      <p className="notice">{t("split.stage")}</p>
+    </div>
+  );
+}
