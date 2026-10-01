@@ -47,3 +47,25 @@ export function CreatorHub() {
       setNote(t("pay.starsNeedTg"));
       return;
     }
+    window.Telegram.WebApp.openInvoice(url, (status) => {
+      setNote(status === "paid" ? t("pay.sent") : t("pay.failed"));
+    });
+  };
+
+  return (
+    <div>
+      <h1 className="screen-title">{t("creator.title")}</h1>
+      <p className="muted">{t("creator.lead")}</p>
+      <div className="hero" style={{ marginTop: 14 }}>
+        <div className="spread"><span>{t("creator.mrr")}</span><b>0</b></div>
+        <div className="spread" style={{ marginTop: 8 }}><span>{t("creator.active")}</span><b>0</b></div>
+        <div className="spread" style={{ marginTop: 8 }}><span>{t("creator.churn")}</span><b>0%</b></div>
+        <p className="notice">{t("creator.analyticsEmpty")}</p>
+      </div>
+      <p className="notice">{t("creator.chatHint", { bot })}</p>
+      <section className="section">
+        <h2>{t("creator.plans")}</h2>
+        <div className="rail">
+          {plans.map((plan) => (
+            <div className="plan" key={plan.id}>
+              <div className="spread">
