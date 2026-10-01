@@ -25,3 +25,25 @@ export function CreatorHub() {
     const value = Number(amount);
     if (!title.trim() || !value) return;
     save({
+      id: crypto.randomUUID(),
+      title: title.trim(),
+      amount: value,
+      currency,
+      period,
+      chatId: chatId.trim() || undefined,
+    });
+    setTitle("");
+    setOpen(false);
+    void haptic("success");
+  };
+
+  const stars = async (plan: CreatorPlan) => {
+    if (!runtime.inTelegram || !window.Telegram?.WebApp?.openInvoice) {
+      setNote(t("pay.starsNeedTg"));
+      return;
+    }
+    const url = await createStarsInvoice({ id: plan.id, title: plan.title, amount: Math.round(plan.amount) });
+    if (!url) {
+      setNote(t("pay.starsNeedTg"));
+      return;
+    }
