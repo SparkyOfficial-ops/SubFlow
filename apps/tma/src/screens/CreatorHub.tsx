@@ -69,3 +69,25 @@ export function CreatorHub() {
           {plans.map((plan) => (
             <div className="plan" key={plan.id}>
               <div className="spread">
+                <b>{plan.title}</b>
+                <span>{formatMoney(plan.amount, plan.currency)}</span>
+              </div>
+              <p className="row-meta">{t(`periods.${plan.period}`)}{plan.chatId ? ` · ${plan.chatId}` : ""}</p>
+              <p className="row-meta">{t("creator.sell")}: t.me/{bot}/app?startapp=plan_{plan.id}</p>
+              <div className="stack" style={{ marginTop: 8 }}>
+                {plan.currency === "STARS" && (
+                  <button type="button" className="primary" onClick={() => void stars(plan)}>{t("creator.stars")}</button>
+                )}
+                <button type="button" className="danger" onClick={() => remove(plan.id)}>{t("detail.remove")}</button>
+              </div>
+            </div>
+          ))}
+          {!plans.length && <p className="muted">{t("creator.empty")}</p>}
+        </div>
+      </section>
+      {!open ? (
+        <button type="button" className="primary" style={{ marginTop: 16 }} onClick={() => setOpen(true)}>{t("creator.newPlan")}</button>
+      ) : (
+        <div>
+          <label className="field">{t("creator.name")}<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+          <label className="field">{t("creator.price")}<input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
