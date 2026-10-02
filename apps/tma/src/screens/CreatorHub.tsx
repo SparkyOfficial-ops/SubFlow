@@ -91,3 +91,25 @@ export function CreatorHub() {
         <div>
           <label className="field">{t("creator.name")}<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
           <label className="field">{t("creator.price")}<input inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} /></label>
+          <label className="field">
+            {t("add.currency")}
+            <select value={currency} onChange={(event) => setCurrency(event.target.value as CreatorPlan["currency"])}>
+              <option value="TON">TON</option>
+              <option value="USDT">USDT</option>
+              <option value="STARS">Stars</option>
+            </select>
+          </label>
+          <label className="field">
+            {t("creator.period")}
+            <select value={period} onChange={(event) => setPeriod(event.target.value as PlanPeriod)}>
+              {PLAN_PERIODS.map((item) => <option key={item} value={item}>{t(`periods.${item}`)}</option>)}
+            </select>
+          </label>
+          <label className="field">{t("creator.chat")}<input value={chatId} onChange={(event) => setChatId(event.target.value)} placeholder="-100..." /></label>
+          <div className="stack" style={{ marginTop: 12 }}>
+            <button type="button" className="primary" onClick={submit}>{t("creator.save")}</button>
+            <button type="button" className="ghost" onClick={() => setOpen(false)}>{t("subs.later")}</button>
+          </div>
+        </div>
+      )}
+      {note && <p className="notice">{note}</p>}
