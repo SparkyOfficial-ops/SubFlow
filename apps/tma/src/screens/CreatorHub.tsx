@@ -113,3 +113,6 @@ export function CreatorHub() {
         </div>
       )}
       {note && <p className="notice">{note}</p>}
+    </div>
+  );
+}
