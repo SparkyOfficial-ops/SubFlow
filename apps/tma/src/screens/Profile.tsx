@@ -39,3 +39,25 @@ export function Profile() {
       setBalances({ ton: ton ? Number(ton).toFixed(2) : undefined, usdt, loading: false });
     }).catch(() => {
       if (!stop) setBalances({ loading: false });
+    });
+    return () => {
+      stop = true;
+    };
+  }, [wallet, setWallet]);
+
+  return (
+    <div>
+      <h1 className="screen-title">{t("profile.title")}</h1>
+      {!runtime.inTelegram && <p className="notice">{t("profile.outside")}</p>}
+      <section className="section">
+        <h2>{t("profile.wallet")}</h2>
+        <div className="hero">
+          <p className="row-title">{wallet ? `${wallet.account.address.slice(0, 6)}…${wallet.account.address.slice(-4)}` : t("profile.guest")}</p>
+          {balances.loading ? (
+            <div className="stack" style={{ marginTop: 12 }}>
+              <div className="skel" />
+              <div className="skel" style={{ width: "60%" }} />
+              <p className="row-meta">{t("profile.loading")}</p>
+            </div>
+          ) : wallet ? (
+            <p className="hero-sub">{balances.ton ?? "—"} TON · {balances.usdt ?? "—"} USDT</p>
