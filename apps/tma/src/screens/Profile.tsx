@@ -83,3 +83,19 @@ export function Profile() {
       </section>
       <section className="section">
         <h2>{t("profile.notify")}</h2>
+        <div className="chips">
+          {[7, 3, 1].map((day) => (
+            <button type="button" key={day} className={notifyDays.includes(day) ? "chip on" : "chip"} onClick={() => toggleNotify(day)}>
+              {t("profile.days", { count: day })}
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="section">
+        <h2>{t("profile.vaultTitle")}</h2>
+        <p className="muted">{t("profile.vaultText")}</p>
+      </section>
+      {plus && <p className="notice">{t("profile.plusOn")}</p>}
+    </div>
+  );
+}
