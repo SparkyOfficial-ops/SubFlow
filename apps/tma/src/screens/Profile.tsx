@@ -61,3 +61,25 @@ export function Profile() {
             </div>
           ) : wallet ? (
             <p className="hero-sub">{balances.ton ?? "—"} TON · {balances.usdt ?? "—"} USDT</p>
+          ) : null}
+          <div className="stack" style={{ marginTop: 12 }}>
+            {wallet ? (
+              <button type="button" className="ghost" onClick={() => { void tonConnect.disconnect(); void haptic("tap"); }}>{t("profile.disconnect")}</button>
+            ) : (
+              <button type="button" className="primary" onClick={() => { void tonConnect.openModal(); void haptic("tap"); }}>{t("profile.connect")}</button>
+            )}
+          </div>
+        </div>
+      </section>
+      <section className="section">
+        <h2>{t("profile.currency")}</h2>
+        <div className="chips">
+          {DISPLAY_CURRENCIES.map((item) => (
+            <button type="button" key={item} className={item === currency ? "chip on" : "chip"} onClick={() => setCurrency(item)}>
+              {t(`display.${item}`)}
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="section">
+        <h2>{t("profile.notify")}</h2>
