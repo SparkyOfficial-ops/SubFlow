@@ -26,3 +26,25 @@ function Screens() {
     if (param.startsWith("split_")) setRoute({ name: "split" });
     if (param.startsWith("plan_")) setRoute({ name: "creator" });
   }, [setRoute]);
+
+  if (route.name === "add") return <AddSubscription />;
+  if (route.name === "detail") return <SubscriptionDetail id={route.id} />;
+  if (route.name === "split") return <SplitPay subscriptionId={route.subscriptionId} />;
+  if (route.name === "home") {
+    return (
+      <div>
+        <div className="topbar">
+          <h1>{t("dash.hello", { name: runtime.userName ? `, ${runtime.userName}` : "" })}</h1>
+        </div>
+        <Dashboard />
+      </div>
+    );
+  }
+  if (route.name === "subs") return <Subscriptions />;
+  if (route.name === "calendar") return <CalendarScreen />;
+  if (route.name === "creator" || route.name === "plan") return <CreatorHub />;
+  return <Profile />;
+}
+
+export function App() {
+  const onboarded = useAppStore((state) => state.onboarded);
