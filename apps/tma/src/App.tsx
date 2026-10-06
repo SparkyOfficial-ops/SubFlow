@@ -48,3 +48,25 @@ function Screens() {
 
 export function App() {
   const onboarded = useAppStore((state) => state.onboarded);
+  const manifest = import.meta.env.VITE_TONCONNECT_MANIFEST_URL || `${window.location.origin}/tonconnect-manifest.json`;
+
+  useEffect(() => {
+    applyLanguage(runtime.language);
+  }, []);
+
+  const route = useAppStore((state) => state.route);
+  const pushed = route.name === "add" || route.name === "detail" || route.name === "split";
+
+  return (
+    <TonConnectUIProvider manifestUrl={manifest}>
+      {onboarded ? (
+        <div className={pushed ? "app with-action" : "app"}>
+          <Screens />
+          {!pushed && <TabBar />}
+        </div>
+      ) : (
+        <Onboarding />
+      )}
+    </TonConnectUIProvider>
+  );
+}
