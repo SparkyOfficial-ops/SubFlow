@@ -32,3 +32,25 @@ model Subscription {
   name          String
   emoji         String
   color         String
+  amount        Decimal    @db.Decimal(18, 6)
+  currency      String
+  period        String
+  customDays    Int?
+  nextChargeAt  DateTime
+  paymentMethod String
+  category      String
+  status        String     @default("active")
+  note          String?
+  isTrial       Boolean    @default(false)
+  trialEndsAt   DateTime?
+  templateId    String?
+  createdAt     DateTime   @default(now())
+  reminders     Reminder[]
+
+  @@index([userId, status])
+  @@index([nextChargeAt])
+}
+
+model Reminder {
+  id             String       @id @default(cuid())
+  subscriptionId String
