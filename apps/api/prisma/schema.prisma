@@ -54,3 +54,25 @@ model Subscription {
 model Reminder {
   id             String       @id @default(cuid())
   subscriptionId String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  daysBefore     Int
+  cycleKey       String
+  sentAt         DateTime     @default(now())
+
+  @@unique([subscriptionId, daysBefore, cycleKey])
+}
+
+model Plan {
+  id          String       @id
+  ownerId     String
+  owner       User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  title       String
+  amount      Decimal      @db.Decimal(18, 6)
+  currency    String
+  period      String
+  chatId      String?
+  createdAt   DateTime     @default(now())
+  memberships Membership[]
+
+  @@index([ownerId])
+}
