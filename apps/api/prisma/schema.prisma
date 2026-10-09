@@ -98,3 +98,20 @@ model Payment {
   txHash    String?  @unique
   provider  String
   userId    String?
+  planId    String?
+  comment   String?
+  amount    Decimal? @db.Decimal(18, 6)
+  currency  String?
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model MerchantKey {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apiKey        String   @unique
+  webhookUrl    String?
+  webhookSecret String
+  createdAt     DateTime @default(now())
+}
