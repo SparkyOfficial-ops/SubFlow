@@ -39,3 +39,20 @@ export function verifyInitData(
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
   const secret = createHmac("sha256", "WebAppData").update(botToken).digest();
+  const computed = createHmac("sha256", secret).update(dataCheckString).digest("hex");
+  const actual = Buffer.from(computed, "hex");
+  const expected = Buffer.from(hash, "hex");
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
+  const authDate = Number(fields.get("auth_date") ?? 0);
+  if (!Number.isFinite(authDate) || authDate <= 0 || nowSec - authDate > maxAgeSec) return null;
+  const rawUser = fields.get("user");
+  if (!rawUser) return null;
+  let user: TelegramWebUser;
+  try {
+    user = JSON.parse(rawUser) as TelegramWebUser;
+  } catch {
+    return null;
+  }
+  if (!user?.id || !user.first_name) return null;
+  return { user, authDate, startParam: fields.get("start_param") || undefined };
+}
