@@ -25,3 +25,16 @@ test("accepts a fresh signed initData", () => {
   assert.equal(result?.user.id, 42);
   assert.equal(result?.user.first_name, "Анна");
   assert.equal(result?.user.language_code, "ru");
+});
+
+test("rejects a tampered name and an expired auth date", () => {
+  const token = "123456:TEST";
+  const now = 1_700_000_000;
+  const initData = signedInitData(token, {
+    auth_date: String(now - 10),
+    user: JSON.stringify({ id: 7, first_name: "Mia" }),
+  });
+  const broken = initData.replace("Mia", "Max");
+  assert.equal(verifyInitData(broken, token, now), null);
+  assert.equal(verifyInitData(initData, token, now + 60 * 60 * 48), null);
+});
