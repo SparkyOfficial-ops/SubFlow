@@ -29,3 +29,7 @@ export function readSession(token: string): TokenPayload | null {
     const payload = JSON.parse(Buffer.from(body, "base64url").toString()) as TokenPayload;
     if (!payload.sub || payload.exp < Date.now()) return null;
     return payload;
+  } catch {
+    return null;
+  }
+}
