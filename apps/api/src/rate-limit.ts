@@ -16,3 +16,16 @@ function memoryAllow(key: string, limit: number, windowMs: number): boolean {
 }
 
 export async function allowRequest(key: string, limit = 60, windowMs = 60_000): Promise<boolean> {
+  if (process.env.REDIS_URL) {
+    try {
+      if (!redis) redis = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 1, enableOfflineQueue: false });
+      const hits = await redis.incr(`rl:${key}`);
+      if (hits === 1) await redis.pexpire(`rl:${key}`, windowMs);
+      return hits <= limit;
+    } catch {
+      redis?.disconnect();
+      redis = null;
+    }
+  }
+  return memoryAllow(key, limit, windowMs);
+}
