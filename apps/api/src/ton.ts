@@ -51,3 +51,12 @@ export async function findRouterTransfer(input: {
       if (text === input.comment && value >= input.minUnits) return { hash: tx.hash };
     } else {
       const decoded = message?.decoded_body;
+      if (!decoded) continue;
+      const serialized = JSON.stringify(decoded);
+      const amount = BigInt(decoded.amount ?? 0);
+      const looksLikeJetton = (message?.decoded_op_name ?? "").toLowerCase().includes("jetton") || "amount" in decoded;
+      if (looksLikeJetton && serialized.includes(input.comment) && amount >= input.minUnits) return { hash: tx.hash };
+    }
+  }
+  return null;
+}
