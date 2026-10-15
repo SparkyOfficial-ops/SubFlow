@@ -29,3 +29,25 @@ export interface ConfirmedTransfer {
 /** Ищет уже финализированный перевод на контракт платформы. Клиентский boc доказательством не считается. */
 export async function findRouterTransfer(input: {
   comment: string;
+  currency: "TON" | "USDT";
+  minUnits: bigint;
+}): Promise<ConfirmedTransfer | null> {
+  const router = process.env.ROUTER_ADDRESS;
+  if (!router) return null;
+  const endpoint = (process.env.TONAPI_ENDPOINT || "https://tonapi.io").replace(/\/$/, "");
+  const headers: Record<string, string> = {};
+  if (process.env.TONAPI_KEY) headers.Authorization = `Bearer ${process.env.TONAPI_KEY}`;
+  const response = await fetch(`${endpoint}/v2/blockchain/accounts/${encodeURIComponent(router)}/transactions?limit=40`, { headers });
+  if (!response.ok) return null;
+  const body = (await response.json()) as { transactions?: TonTransaction[] };
+  for (const tx of body.transactions ?? []) {
+    if (tx.success === false) continue;
+    const message = tx.in_msg;
+    const destination = message?.destination?.address;
+    if (!destination || !sameAddress(destination, router)) continue;
+    if (input.currency === "TON") {
+      const text = message?.decoded_body?.text ?? "";
+      const value = BigInt(message?.value ?? 0);
+      if (text === input.comment && value >= input.minUnits) return { hash: tx.hash };
+    } else {
+      const decoded = message?.decoded_body;
