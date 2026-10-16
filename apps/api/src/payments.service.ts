@@ -33,3 +33,25 @@ export class PaymentsService {
     const plan = planId ? await this.prisma.plan.findUnique({ where: { id: planId } }) : null;
     if (planId && (!plan || plan.currency !== currency)) throw new BadRequestException("Unknown plan");
     const minUnits = plan ? (currency === "TON" ? toNano(plan.amount.toString()) : BigInt(Math.round(Number(plan.amount) * 1_000_000))) : 1n;
+    const found = await findRouterTransfer({ comment, currency, minUnits });
+    if (!found) return { status: "pending" as const };
+    const existing = await this.prisma.payment.findUnique({ where: { txHash: found.hash } });
+    if (existing) return { status: "confirmed" as const, txHash: found.hash };
+    await this.prisma.payment.create({
+      data: {
+        txHash: found.hash,
+        provider: currency,
+        userId,
+        planId: plan?.id,
+        comment,
+        amount: plan?.amount,
+        currency,
+        status: "confirmed",
+      },
+    });
+    if (plan) await this.grant(plan.id, userId, found.hash, false);
+    return { status: "confirmed" as const, txHash: found.hash };
+  }
+
+  async confirmStars(input: { payload: string; chargeId: string; telegramId: string; amount: number }) {
+    const existing = await this.prisma.payment.findUnique({ where: { txHash: input.chargeId } });
