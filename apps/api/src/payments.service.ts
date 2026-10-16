@@ -77,3 +77,25 @@ export class PaymentsService {
 
   async grant(planId: string, userId: string, reference: string, renewal: boolean) {
     const plan = await this.prisma.plan.findUnique({ where: { id: planId }, include: { owner: true } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!plan || !user) return;
+    const days = planDurationDays(plan.period as "month" | "quarter" | "forever");
+    const current = await this.prisma.membership.findFirst({ where: { planId, userId, status: "active" }, orderBy: { expiresAt: "desc" } });
+    const base = current?.expiresAt && current.expiresAt > new Date() ? current.expiresAt : new Date();
+    const expiresAt = days ? addPeriod(base, plan.period as "month" | "quarter") : null;
+    let inviteLink: string | undefined;
+    if (plan.chatId && process.env.BOT_TOKEN) {
+      const response = await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/createChatInviteLink`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ chat_id: plan.chatId, member_limit: 1, name: `subflow-${reference.slice(0, 12)}` }),
+      });
+      const body = (await response.json()) as { ok: boolean; result?: { invite_link?: string } };
+      inviteLink = body.result?.invite_link;
+      if (inviteLink) {
+        await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ chat_id: user.telegramId.toString(), text: inviteLink }),
+        });
+      }
