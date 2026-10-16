@@ -55,3 +55,25 @@ export class PaymentsService {
 
   async confirmStars(input: { payload: string; chargeId: string; telegramId: string; amount: number }) {
     const existing = await this.prisma.payment.findUnique({ where: { txHash: input.chargeId } });
+    if (existing) return { status: "confirmed" as const };
+    const user = await this.prisma.user.findUnique({ where: { telegramId: BigInt(input.telegramId) } });
+    if (!user) throw new UnauthorizedException();
+    if (input.payload === "plus") {
+      await this.prisma.payment.create({
+        data: { txHash: input.chargeId, provider: "STARS", userId: user.id, comment: "plus", amount: input.amount, currency: "STARS", status: "confirmed" },
+      });
+      await this.prisma.user.update({ where: { id: user.id }, data: { plusUntil: addPeriod(new Date(), "month") } });
+      return { status: "confirmed" as const };
+    }
+    const planId = input.payload.split(":")[1];
+    const plan = planId ? await this.prisma.plan.findUnique({ where: { id: planId } }) : null;
+    if (!plan || plan.currency !== "STARS" || Number(plan.amount) !== input.amount) throw new BadRequestException("Invoice does not match the plan");
+    await this.prisma.payment.create({
+      data: { txHash: input.chargeId, provider: "STARS", userId: user.id, planId: plan.id, comment: input.payload, amount: input.amount, currency: "STARS", status: "confirmed" },
+    });
+    await this.grant(plan.id, user.id, input.chargeId, false);
+    return { status: "confirmed" as const };
+  }
+
+  async grant(planId: string, userId: string, reference: string, renewal: boolean) {
+    const plan = await this.prisma.plan.findUnique({ where: { id: planId }, include: { owner: true } });
