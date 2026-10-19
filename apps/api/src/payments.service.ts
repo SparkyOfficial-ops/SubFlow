@@ -121,3 +121,25 @@ export class PaymentsService {
     const lost = rows.filter((row) => row.status === "expired" && row.kickedAt && row.kickedAt.getTime() > monthAgo);
     const mrr = active.reduce((sum, row) => sum + monthlyEquivalent(Number(row.plan.amount), row.plan.period as "month" | "quarter" | "forever"), 0);
     const churn = active.length + lost.length === 0 ? 0 : lost.length / (active.length + lost.length);
+    return { mrr, active: active.length, churn };
+  }
+
+  async ensureMerchantKey(userId: string, webhookUrl?: string) {
+    const current = await this.prisma.merchantKey.findUnique({ where: { userId } });
+    if (current) {
+      if (webhookUrl !== undefined) {
+        return this.prisma.merchantKey.update({ where: { userId }, data: { webhookUrl: webhookUrl || null } });
+      }
+      return current;
+    }
+    return this.prisma.merchantKey.create({
+      data: { userId, apiKey: `sf_${randomBytes(24).toString("base64url")}`, webhookSecret: randomBytes(24).toString("base64url"), webhookUrl: webhookUrl || null },
+    });
+  }
+
+  async expireNotice(ownerId: string, data: object) {
+    await this.webhook(ownerId, "subscription.expired", data);
+  }
+
+  private async webhook(ownerId: string, event: string, data: object) {
+    const key = await this.prisma.merchantKey.findUnique({ where: { userId: ownerId } });
