@@ -143,3 +143,13 @@ export class PaymentsService {
 
   private async webhook(ownerId: string, event: string, data: object) {
     const key = await this.prisma.merchantKey.findUnique({ where: { userId: ownerId } });
+    if (!key?.webhookUrl) return;
+    const body = JSON.stringify({ event, data, sentAt: new Date().toISOString() });
+    const signature = createHmac("sha256", key.webhookSecret).update(body).digest("hex");
+    await fetch(key.webhookUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-subflow-signature": signature },
+      body,
+    }).catch(() => undefined);
+  }
+}
