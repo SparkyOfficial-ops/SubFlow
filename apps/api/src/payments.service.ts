@@ -99,3 +99,25 @@ export class PaymentsService {
           body: JSON.stringify({ chat_id: user.telegramId.toString(), text: inviteLink }),
         });
       }
+    }
+    if (current) {
+      await this.prisma.membership.update({ where: { id: current.id }, data: { expiresAt, inviteLink: inviteLink ?? current.inviteLink, status: "active", kickedAt: null } });
+    } else {
+      await this.prisma.membership.create({ data: { planId, userId, status: "active", expiresAt, inviteLink } });
+    }
+    await this.webhook(plan.ownerId, renewal ? "subscription.renewed" : "subscription.created", {
+      planId,
+      userId,
+      telegramId: user.telegramId.toString(),
+      expiresAt,
+    });
+  }
+
+  async analytics(ownerId: string) {
+    const rows = await this.prisma.membership.findMany({ where: { plan: { ownerId } }, include: { plan: true } });
+    const now = Date.now();
+    const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
+    const active = rows.filter((row) => row.status === "active" && (!row.expiresAt || row.expiresAt.getTime() > now));
+    const lost = rows.filter((row) => row.status === "expired" && row.kickedAt && row.kickedAt.getTime() > monthAgo);
+    const mrr = active.reduce((sum, row) => sum + monthlyEquivalent(Number(row.plan.amount), row.plan.period as "month" | "quarter" | "forever"), 0);
+    const churn = active.length + lost.length === 0 ? 0 : lost.length / (active.length + lost.length);
