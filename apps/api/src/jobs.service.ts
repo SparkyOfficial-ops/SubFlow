@@ -54,3 +54,25 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
       where: { status: "active", nextChargeAt: { lte: soon } },
       include: { user: true, reminders: true },
     });
+    for (const sub of subs) {
+      const target = sub.isTrial && sub.trialEndsAt ? sub.trialEndsAt : sub.nextChargeAt;
+      const daysLeft = (target.getTime() - Date.now()) / (24 * 60 * 60 * 1000);
+      if (daysLeft < 0) continue;
+      const due = [...sub.user.notifyDays].filter((day) => daysLeft <= day).sort((a, b) => b - a);
+      for (const day of due) {
+        const cycleKey = target.toISOString();
+        if (sub.reminders.some((item) => item.daysBefore === day && item.cycleKey === cycleKey)) continue;
+        const text = sub.user.language.startsWith("ru")
+          ? `${sub.name}: списание через ${day} дн. Откройте SubFlow, чтобы продлить.`
+          : `${sub.name}: charge in ${day} days. Open SubFlow to renew.`;
+        await this.send(sub.user.telegramId.toString(), text);
+        await this.prisma.reminder.create({ data: { subscriptionId: sub.id, daysBefore: day, cycleKey } });
+        break;
+      }
+    }
+  }
+
+  private async revoke(): Promise<void> {
+    const deadline = new Date(Date.now() - GRACE_HOURS * 60 * 60 * 1000);
+    const rows = await this.prisma.membership.findMany({
+      where: { status: "active", expiresAt: { lt: deadline }, kickedAt: null },
