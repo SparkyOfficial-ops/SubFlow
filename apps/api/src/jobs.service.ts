@@ -32,3 +32,25 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     if (!url) return false;
     try {
       const parsed = new URL(url);
+      const connection = { host: parsed.hostname, port: Number(parsed.port || 6379), password: parsed.password || undefined, maxRetriesPerRequest: null };
+      this.queue = new Queue("subflow", { connection });
+      await this.queue.add("tick", {}, { repeat: { every: 60_000 }, jobId: "subflow-tick" });
+      this.worker = new Worker("subflow", async () => this.tick(), { connection });
+      return true;
+    } catch (error) {
+      this.logger.warn(`BullMQ is off, using a local timer: ${String(error)}`);
+      return false;
+    }
+  }
+
+  async tick(): Promise<void> {
+    await this.remind();
+    await this.revoke();
+  }
+
+  private async remind(): Promise<void> {
+    const soon = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000);
+    const subs = await this.prisma.subscription.findMany({
+      where: { status: "active", nextChargeAt: { lte: soon } },
+      include: { user: true, reminders: true },
+    });
