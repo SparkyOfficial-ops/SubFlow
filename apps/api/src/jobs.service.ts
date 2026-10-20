@@ -76,3 +76,25 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
     const deadline = new Date(Date.now() - GRACE_HOURS * 60 * 60 * 1000);
     const rows = await this.prisma.membership.findMany({
       where: { status: "active", expiresAt: { lt: deadline }, kickedAt: null },
+      include: { plan: true, user: true },
+    });
+    const token = process.env.BOT_TOKEN;
+    for (const row of rows) {
+      if (token && row.plan.chatId) {
+        await fetch(`https://api.telegram.org/bot${token}/banChatMember`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ chat_id: row.plan.chatId, user_id: Number(row.user.telegramId) }),
+        });
+        await fetch(`https://api.telegram.org/bot${token}/unbanChatMember`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ chat_id: row.plan.chatId, user_id: Number(row.user.telegramId), only_if_banned: true }),
+        });
+      }
+      await this.prisma.membership.update({ where: { id: row.id }, data: { status: "expired", kickedAt: new Date() } });
+      await this.payments.expireNotice(row.plan.ownerId, { planId: row.planId, userId: row.userId });
+    }
+  }
+
+  private async send(chatId: string, text: string): Promise<void> {
