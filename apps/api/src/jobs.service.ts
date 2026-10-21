@@ -98,3 +98,17 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async send(chatId: string, text: string): Promise<void> {
+    const token = process.env.BOT_TOKEN;
+    if (!token) return;
+    const webApp = process.env.WEBAPP_URL;
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        reply_markup: webApp ? { inline_keyboard: [[{ text: "SubFlow", web_app: { url: webApp } }]] } : undefined,
+      }),
+    });
+  }
+}
