@@ -72,3 +72,25 @@ class ChainDto {
 class StarsDto {
   @IsString() payload!: string;
   @IsString() chargeId!: string;
+  @IsString() telegramId!: string;
+  @IsInt() amount!: number;
+}
+
+class WebhookDto {
+  @IsOptional() @IsString() webhookUrl?: string;
+}
+
+@Injectable()
+export class CurrentUser {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async from(authorization?: string) {
+    const token = authorization?.replace(/^Bearer\s+/i, "");
+    if (!token) throw new UnauthorizedException();
+    const session = readSession(token);
+    if (!session) throw new UnauthorizedException();
+    const user = await this.prisma.user.findUnique({ where: { id: session.sub } });
+    if (!user) throw new UnauthorizedException();
+    return user;
+  }
+}
