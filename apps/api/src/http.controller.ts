@@ -50,3 +50,25 @@ class PatchSubscriptionDto {
 }
 
 class PlanDto {
+  @IsString() id!: string;
+  @IsString() title!: string;
+  @IsNumber() amount!: number;
+  @IsIn(["TON", "USDT", "STARS"]) currency!: "TON" | "USDT" | "STARS";
+  @IsIn(PLAN_PERIODS) period!: PlanPeriod;
+  @IsOptional() @IsString() chatId?: string;
+}
+
+class InvoiceDto {
+  @IsString() id!: string;
+  @IsString() title!: string;
+  @IsInt() @Min(1) @Max(100000) amount!: number;
+}
+
+class ChainDto {
+  @IsString() comment!: string;
+  @IsIn(["TON", "USDT"]) currency!: "TON" | "USDT";
+}
+
+class StarsDto {
+  @IsString() payload!: string;
+  @IsString() chargeId!: string;
