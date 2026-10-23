@@ -138,3 +138,25 @@ export class AuthController {
 
 @Controller("subscriptions")
 export class SubscriptionsController {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly current: CurrentUser,
+  ) {}
+
+  @Get()
+  async list(@Headers("authorization") authorization?: string) {
+    const user = await this.current.from(authorization);
+    const rows = await this.prisma.subscription.findMany({ where: { userId: user.id }, orderBy: { nextChargeAt: "asc" } });
+    return rows.map(serializeSubscription);
+  }
+
+  @Post()
+  async save(@Headers("authorization") authorization: string | undefined, @Body() body: SubscriptionDto) {
+    const user = await this.current.from(authorization);
+    const clash = await this.prisma.subscription.findUnique({ where: { id: body.id } });
+    if (clash && clash.userId !== user.id) throw new UnauthorizedException();
+    const existing = clash;
+    const plus = user.plusUntil && user.plusUntil > new Date();
+    if (!existing && !plus) {
+      const used = await this.prisma.subscription.count({ where: { userId: user.id, status: { not: "cancelled" } } });
+      if (used >= FREE_SUBSCRIPTION_LIMIT) throw new BadRequestException("Free plan limit reached");
