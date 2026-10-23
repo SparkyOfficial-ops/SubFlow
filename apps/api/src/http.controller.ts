@@ -116,3 +116,25 @@ export class AuthController {
     const user = await this.prisma.user.upsert({
       where: { telegramId: BigInt(verified.user.id) },
       create: {
+        telegramId: BigInt(verified.user.id),
+        firstName: verified.user.first_name,
+        lastName: verified.user.last_name,
+        username: verified.user.username,
+        language: verified.user.language_code ?? "en",
+      },
+      update: {
+        firstName: verified.user.first_name,
+        lastName: verified.user.last_name,
+        username: verified.user.username,
+        language: verified.user.language_code ?? "en",
+      },
+    });
+    return {
+      token: signSession(user.id, user.telegramId.toString()),
+      user: { id: user.id, firstName: user.firstName, language: user.language },
+    };
+  }
+}
+
+@Controller("subscriptions")
+export class SubscriptionsController {
