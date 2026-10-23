@@ -94,3 +94,25 @@ export class CurrentUser {
     return user;
   }
 }
+
+@Controller()
+export class HealthController {
+  @Get("health")
+  health() {
+    return { ok: true, service: "subflow-api" };
+  }
+}
+
+@Controller("auth")
+export class AuthController {
+  constructor(private readonly prisma: PrismaService) {}
+
+  @Post("telegram")
+  async telegram(@Body() body: TelegramAuthDto) {
+    const token = process.env.BOT_TOKEN;
+    if (!token) throw new BadRequestException("BOT_TOKEN is not configured");
+    const verified = verifyInitData(body.initData, token);
+    if (!verified) throw new UnauthorizedException("Invalid initData");
+    const user = await this.prisma.user.upsert({
+      where: { telegramId: BigInt(verified.user.id) },
+      create: {
