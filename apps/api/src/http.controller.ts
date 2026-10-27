@@ -182,3 +182,25 @@ export class SubscriptionsController {
       ? await this.prisma.subscription.update({ where: { id: existing.id }, data })
       : await this.prisma.subscription.create({ data: { ...data, id: body.id, userId: user.id } });
     return serializeSubscription(row);
+  }
+
+  @Patch(":id")
+  async patch(@Param("id") id: string, @Headers("authorization") authorization: string | undefined, @Body() body: PatchSubscriptionDto) {
+    const user = await this.current.from(authorization);
+    const owned = await this.prisma.subscription.findFirst({ where: { id, userId: user.id } });
+    if (!owned) throw new UnauthorizedException();
+    const row = await this.prisma.subscription.update({
+      where: { id },
+      data: {
+        status: body.status,
+        nextChargeAt: body.nextChargeAt ? new Date(body.nextChargeAt) : undefined,
+        note: body.note,
+      },
+    });
+    return serializeSubscription(row);
+  }
+
+  @Delete(":id")
+  async remove(@Param("id") id: string, @Headers("authorization") authorization?: string) {
+    const user = await this.current.from(authorization);
+    await this.prisma.subscription.deleteMany({ where: { id, userId: user.id } });
