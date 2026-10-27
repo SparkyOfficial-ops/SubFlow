@@ -160,3 +160,25 @@ export class SubscriptionsController {
     if (!existing && !plus) {
       const used = await this.prisma.subscription.count({ where: { userId: user.id, status: { not: "cancelled" } } });
       if (used >= FREE_SUBSCRIPTION_LIMIT) throw new BadRequestException("Free plan limit reached");
+    }
+    const data = {
+      name: body.name,
+      emoji: body.emoji,
+      color: body.color,
+      amount: body.amount,
+      currency: body.currency,
+      period: body.period,
+      customDays: body.customDays,
+      nextChargeAt: new Date(body.nextChargeAt),
+      paymentMethod: body.paymentMethod,
+      category: body.category,
+      note: body.note,
+      isTrial: Boolean(body.isTrial),
+      trialEndsAt: body.trialEndsAt ? new Date(body.trialEndsAt) : null,
+      templateId: body.templateId,
+      status: body.status ?? "active",
+    };
+    const row = existing
+      ? await this.prisma.subscription.update({ where: { id: existing.id }, data })
+      : await this.prisma.subscription.create({ data: { ...data, id: body.id, userId: user.id } });
+    return serializeSubscription(row);
