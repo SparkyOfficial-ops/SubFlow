@@ -226,3 +226,25 @@ export class CreatorsController {
   async save(@Headers("authorization") authorization: string | undefined, @Body() body: PlanDto) {
     const user = await this.current.from(authorization);
     const existing = await this.prisma.plan.findUnique({ where: { id: body.id } });
+    if (existing && existing.ownerId !== user.id) throw new UnauthorizedException();
+    return this.prisma.plan.upsert({
+      where: { id: body.id },
+      create: { ...body, ownerId: user.id },
+      update: { title: body.title, amount: body.amount, currency: body.currency, period: body.period, chatId: body.chatId },
+    });
+  }
+
+  @Get("analytics")
+  async analytics(@Headers("authorization") authorization?: string) {
+    const user = await this.current.from(authorization);
+    return this.payments.analytics(user.id);
+  }
+
+  @Post("keys")
+  async key(@Headers("authorization") authorization: string | undefined, @Body() body: WebhookDto) {
+    const user = await this.current.from(authorization);
+    const key = await this.payments.ensureMerchantKey(user.id, body.webhookUrl);
+    return { apiKey: key.apiKey, webhookSecret: key.webhookSecret, webhookUrl: key.webhookUrl };
+  }
+
+  @Post("invoices")
