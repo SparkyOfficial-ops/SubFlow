@@ -204,3 +204,25 @@ export class SubscriptionsController {
   async remove(@Param("id") id: string, @Headers("authorization") authorization?: string) {
     const user = await this.current.from(authorization);
     await this.prisma.subscription.deleteMany({ where: { id, userId: user.id } });
+    return { ok: true };
+  }
+}
+
+@Controller("creators")
+export class CreatorsController {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly current: CurrentUser,
+    private readonly payments: PaymentsService,
+  ) {}
+
+  @Get("plans")
+  async plans(@Headers("authorization") authorization?: string) {
+    const user = await this.current.from(authorization);
+    return this.prisma.plan.findMany({ where: { ownerId: user.id }, orderBy: { createdAt: "desc" } });
+  }
+
+  @Post("plans")
+  async save(@Headers("authorization") authorization: string | undefined, @Body() body: PlanDto) {
+    const user = await this.current.from(authorization);
+    const existing = await this.prisma.plan.findUnique({ where: { id: body.id } });
