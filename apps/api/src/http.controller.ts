@@ -248,3 +248,25 @@ export class CreatorsController {
   }
 
   @Post("invoices")
+  async invoice(@Headers("authorization") authorization: string | undefined, @Body() body: InvoiceDto) {
+    const user = await this.current.from(authorization);
+    if (body.id === "plus") {
+      if (body.amount !== 100) throw new BadRequestException("Amount mismatch");
+      return { url: await this.payments.invoiceLink("SubFlow Plus", "plus", 100) };
+    }
+    const plan = await this.prisma.plan.findUnique({ where: { id: body.id } });
+    if (!plan || plan.currency !== "STARS" || Number(plan.amount) !== body.amount) throw new BadRequestException("Unknown plan");
+    const url = await this.payments.invoiceLink(plan.title, `plan:${plan.id}:${user.telegramId.toString()}`, Number(plan.amount));
+    return { url };
+  }
+}
+
+@Controller("payments")
+export class PaymentsController {
+  constructor(
+    private readonly current: CurrentUser,
+    private readonly payments: PaymentsService,
+  ) {}
+
+  @Post("chain")
+  async chain(@Headers("authorization") authorization: string | undefined, @Body() body: ChainDto) {
