@@ -270,3 +270,25 @@ export class PaymentsController {
 
   @Post("chain")
   async chain(@Headers("authorization") authorization: string | undefined, @Body() body: ChainDto) {
+    const user = await this.current.from(authorization);
+    return this.payments.confirmChain(user.id, body.comment, body.currency);
+  }
+}
+
+@Controller("internal")
+export class InternalController {
+  constructor(private readonly payments: PaymentsService) {}
+
+  @Post("stars")
+  async stars(@Headers("x-internal-secret") secret: string | undefined, @Body() body: StarsDto) {
+    if (!process.env.INTERNAL_SECRET || secret !== process.env.INTERNAL_SECRET) throw new UnauthorizedException();
+    return this.payments.confirmStars(body);
+  }
+}
+
+function serializeSubscription(row: {
+  id: string;
+  name: string;
+  emoji: string;
+  color: string;
+  amount: { toString(): string };
