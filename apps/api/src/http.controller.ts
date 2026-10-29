@@ -292,3 +292,22 @@ function serializeSubscription(row: {
   emoji: string;
   color: string;
   amount: { toString(): string };
+  currency: string;
+  period: string;
+  customDays: number | null;
+  nextChargeAt: Date;
+  paymentMethod: string;
+  category: string;
+  status: string;
+  note: string | null;
+  isTrial: boolean;
+  trialEndsAt: Date | null;
+  templateId: string | null;
+}) {
+  return {
+    ...row,
+    amount: Number(row.amount),
+    nextChargeAt: row.nextChargeAt.toISOString(),
+    trialEndsAt: row.trialEndsAt?.toISOString() ?? null,
+  };
+}
