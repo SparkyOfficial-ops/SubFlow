@@ -23,3 +23,15 @@ export class AppModule implements NestModule {
     consumer
       .apply((request: Request, response: Response, next: NextFunction) => {
         const forwarded = request.headers["x-forwarded-for"];
+        const key = request.ip || (Array.isArray(forwarded) ? forwarded[0] : forwarded) || "local";
+        void allowRequest(String(key)).then((allowed) => {
+          if (!allowed) {
+            response.status(429).json({ message: "Too many requests" });
+            return;
+          }
+          next();
+        });
+      })
+      .forRoutes("*");
+  }
+}
