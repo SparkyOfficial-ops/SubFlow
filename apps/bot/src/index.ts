@@ -27,3 +27,25 @@ async function reportStars(payload: string, chargeId: string, telegramId: number
   });
 }
 
+async function main() {
+  loadEnv();
+  const token = process.env.BOT_TOKEN;
+  if (!token) {
+    console.error("Set BOT_TOKEN in .env before starting the bot.");
+    process.exit(1);
+  }
+  const bot = new Bot(token);
+  const webApp = process.env.WEBAPP_URL;
+
+  bot.command("start", async (ctx) => {
+    const keyboard = new InlineKeyboard();
+    if (webApp) keyboard.webApp("SubFlow", webApp);
+    const ru = ctx.from?.language_code?.startsWith("ru");
+    await ctx.reply(
+      ru
+        ? "SubFlow собирает подписки и принимает оплату канала в TON, USDT и Stars."
+        : "SubFlow tracks your subscriptions and charges for a channel in TON, USDT and Stars.",
+      webApp ? { reply_markup: keyboard } : undefined,
+    );
+  });
+
