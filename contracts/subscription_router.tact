@@ -28,3 +28,25 @@ message(0x7362d09c) JettonTransferNotification {
 
 message(0x0f8a7ea5) JettonTransfer {
     queryId: Int as uint64;
+    amount: Int as coins;
+    destination: Address;
+    responseDestination: Address;
+    customPayload: Cell?;
+    forwardTonAmount: Int as coins;
+    forwardPayload: Slice as remaining;
+}
+
+message PaymentAccepted {
+    subscriptionId: Int as uint64;
+    userId: Int as uint64;
+    merchant: Address;
+    amount: Int as coins;
+    currency: Int as uint8;
+}
+
+contract SubscriptionRouter with Deployable {
+    owner: Address;
+    feeBps: Int as uint16;
+    jettonWallet: Address?;
+    treasury: Address;
+
