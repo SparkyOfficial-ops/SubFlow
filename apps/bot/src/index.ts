@@ -49,3 +49,17 @@ async function main() {
     );
   });
 
+  bot.on("message:successful_payment", async (ctx) => {
+    const payment = ctx.message.successful_payment;
+    if (!payment || !ctx.from) return;
+    await reportStars(payment.invoice_payload, payment.telegram_payment_charge_id, ctx.from.id, payment.total_amount);
+    const ru = ctx.from.language_code?.startsWith("ru");
+    await ctx.reply(ru ? "Оплата получена. Если это доступ в канал, ссылка придёт следующим сообщением." : "Payment received. A channel invite follows if this plan includes one.");
+  });
+
+  bot.catch((error) => console.error(error));
+  await bot.start();
+  console.log("SubFlow bot is running");
+}
+
+void main();
