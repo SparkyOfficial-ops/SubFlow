@@ -6,3 +6,25 @@ import "@stdlib/deploy";
 
 message PayTon {
     merchant: Address;
+    subscriptionId: Int as uint64;
+    userId: Int as uint64;
+}
+
+message SetFee {
+    feeBps: Int as uint16;
+}
+
+message SetJettonWallet {
+    jettonWallet: Address;
+    treasury: Address;
+}
+
+message(0x7362d09c) JettonTransferNotification {
+    queryId: Int as uint64;
+    amount: Int as coins;
+    sender: Address;
+    forwardPayload: Slice as remaining;
+}
+
+message(0x0f8a7ea5) JettonTransfer {
+    queryId: Int as uint64;
