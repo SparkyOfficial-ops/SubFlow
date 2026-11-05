@@ -50,3 +50,25 @@ contract SubscriptionRouter with Deployable {
     jettonWallet: Address?;
     treasury: Address;
 
+    init(owner: Address) {
+        self.owner = owner;
+        self.feeBps = 150;
+        self.jettonWallet = null;
+        self.treasury = owner;
+    }
+
+    receive(msg: PayTon) {
+        let incoming = context().value;
+        require(incoming > ton("0.05"), "Payment is too small");
+        let fee = (incoming * self.feeBps) / 10000;
+        let gas = ton("0.02");
+        require(incoming > fee + gas, "Cannot cover fee and gas");
+        let payout = incoming - fee - gas;
+        let note = "sf:" + msg.subscriptionId.toString() + ":" + msg.userId.toString();
+        send(SendParameters{
+            to: msg.merchant,
+            value: payout,
+            mode: SendPayGasSeparately,
+            bounce: false,
+            body: note.asComment()
+        });
