@@ -72,3 +72,25 @@ contract SubscriptionRouter with Deployable {
             bounce: false,
             body: note.asComment()
         });
+        if (fee > 0) {
+            send(SendParameters{
+                to: self.treasury,
+                value: fee,
+                mode: SendPayGasSeparately,
+                bounce: false
+            });
+        }
+        emit(PaymentAccepted{
+            subscriptionId: msg.subscriptionId,
+            userId: msg.userId,
+            merchant: msg.merchant,
+            amount: payout,
+            currency: 0
+        }.toCell());
+    }
+
+    receive(msg: JettonTransferNotification) {
+        let wallet = self.jettonWallet;
+        require(wallet != null, "Jetton wallet is not set");
+        require(sender() == wallet!!, "Unexpected jetton wallet");
+        let payload = msg.forwardPayload;
