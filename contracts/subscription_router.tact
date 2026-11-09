@@ -94,3 +94,25 @@ contract SubscriptionRouter with Deployable {
         require(wallet != null, "Jetton wallet is not set");
         require(sender() == wallet!!, "Unexpected jetton wallet");
         let payload = msg.forwardPayload;
+        require(payload.remainingBits() >= 32 + 64 + 64 + 267, "Missing payment payload");
+        let prefix = payload.loadUint(32);
+        require(prefix == 0, "Payload must start with a comment");
+        // Дальше бэкенд читает комментарий. Сумма и адреса лежат явно, чтобы не зависеть от текста.
+        let subscriptionId = payload.loadUint(64);
+        let userId = payload.loadUint(64);
+        let merchant = payload.loadAddress();
+        let fee = (msg.amount * self.feeBps) / 10000;
+        let payout = msg.amount - fee;
+        require(payout > 0, "Nothing to forward");
+        self.forwardJetton(merchant, payout);
+        if (fee > 0) {
+            self.forwardJetton(self.treasury, fee);
+        }
+        emit(PaymentAccepted{
+            subscriptionId: subscriptionId,
+            userId: userId,
+            merchant: merchant,
+            amount: payout,
+            currency: 1
+        }.toCell());
+    }
