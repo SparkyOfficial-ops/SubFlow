@@ -138,3 +138,25 @@ contract SubscriptionRouter with Deployable {
             merchant: src.merchant,
             amount: 0,
             currency: 0
+        }.toCell());
+    }
+
+    fun forwardJetton(destination: Address, amount: Int) {
+        let wallet = self.jettonWallet!!;
+        send(SendParameters{
+            to: wallet,
+            value: ton("0.06"),
+            mode: SendPayGasSeparately,
+            bounce: true,
+            body: JettonTransfer{
+                queryId: 0,
+                amount: amount,
+                destination: destination,
+                responseDestination: self.owner,
+                customPayload: null,
+                forwardTonAmount: 1,
+                forwardPayload: emptySlice()
+            }.toCell()
+        });
+    }
+
