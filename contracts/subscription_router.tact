@@ -116,3 +116,25 @@ contract SubscriptionRouter with Deployable {
             currency: 1
         }.toCell());
     }
+
+    receive(msg: SetFee) {
+        require(sender() == self.owner, "Only owner");
+        require(msg.feeBps <= 250, "Fee is above 2.5%");
+        self.feeBps = msg.feeBps;
+    }
+
+    receive(msg: SetJettonWallet) {
+        require(sender() == self.owner, "Only owner");
+        self.jettonWallet = msg.jettonWallet;
+        self.treasury = msg.treasury;
+    }
+
+    bounced(src: bounced<PayTon>) {
+        // Отклонённый перевод мерчанту не должен оставлять контракт в промежуточном состоянии:
+        // TON уже ушёл отдельными сообщениями, событие фиксирует попытку для ручного разбора.
+        emit(PaymentAccepted{
+            subscriptionId: src.subscriptionId,
+            userId: src.userId,
+            merchant: src.merchant,
+            amount: 0,
+            currency: 0
