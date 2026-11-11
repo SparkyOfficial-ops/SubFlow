@@ -160,3 +160,11 @@ contract SubscriptionRouter with Deployable {
         });
     }
 
+    get fun feeBps(): Int {
+        return self.feeBps;
+    }
+
+    get fun owner(): Address {
+        return self.owner;
+    }
+}
