@@ -34,3 +34,25 @@ contract UserVault with Deployable {
 
     init(owner: Address, relayer: Address) {
         self.owner = owner;
+        self.relayer = relayer;
+    }
+
+    receive() {
+        // Пополнение нативным TON без тела сообщения.
+    }
+
+    receive(msg: SetAllowance) {
+        require(sender() == self.owner, "Only owner");
+        require(msg.maxAmount > 0, "Empty limit");
+        require(msg.intervalSec >= 3600, "Interval is too short");
+        self.allowances.set(msg.merchant, Allowance{
+            maxAmount: msg.maxAmount,
+            intervalSec: msg.intervalSec,
+            lastChargeTs: 0
+        });
+    }
+
+    receive(msg: RemoveAllowance) {
+        require(sender() == self.owner, "Only owner");
+        self.allowances.del(msg.merchant);
+    }
