@@ -56,3 +56,25 @@ contract UserVault with Deployable {
         require(sender() == self.owner, "Only owner");
         self.allowances.del(msg.merchant);
     }
+
+    receive(msg: Charge) {
+        require(sender() == self.relayer, "Only relayer");
+        let current = self.allowances.get(msg.merchant);
+        require(current != null, "Merchant is not allowed");
+        let allowance = current!!;
+        require(msg.amount > 0 && msg.amount <= allowance.maxAmount, "Above the limit");
+        require(now() >= allowance.lastChargeTs + allowance.intervalSec, "Too early");
+        let reserve = ton("0.05");
+        require(myBalance() > msg.amount + reserve, "Vault balance is too low");
+        self.allowances.set(msg.merchant, Allowance{
+            maxAmount: allowance.maxAmount,
+            intervalSec: allowance.intervalSec,
+            lastChargeTs: now()
+        });
+        send(SendParameters{
+            to: msg.merchant,
+            value: msg.amount,
+            mode: SendPayGasSeparately,
+            bounce: true,
+            body: "subflow-vault".asComment()
+        });
