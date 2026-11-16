@@ -78,3 +78,25 @@ contract UserVault with Deployable {
             bounce: true,
             body: "subflow-vault".asComment()
         });
+    }
+
+    receive(_: WithdrawAll) {
+        require(sender() == self.owner, "Only owner");
+        send(SendParameters{
+            to: self.owner,
+            value: 0,
+            mode: SendRemainingBalance,
+            bounce: false
+        });
+    }
+
+    bounced(src: bounced<Charge>) {
+        // Если мерчант отклонил перевод, лимит уже сдвинут. Владелец может перезаписать allowance.
+        // Событие остаётся в трассировке сообщения, а TON возвращается на баланс сейфа.
+        require(src.amount >= 0, "Unexpected bounce");
+    }
+
+    get fun owner(): Address {
+        return self.owner;
+    }
+}
