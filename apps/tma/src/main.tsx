@@ -5,13 +5,15 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
 import { authenticate } from "./api";
+import { hydrateFromServer } from "./sync";
 import "./i18n";
 import "./styles.css";
 import { bootstrapTelegram } from "./telegram";
 
 async function start() {
   await bootstrapTelegram();
-  void authenticate().catch(() => undefined);
+  const session = await authenticate().catch(() => null);
+  if (session) await hydrateFromServer(session).catch(() => undefined);
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <AppRoot>

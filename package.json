@@ -15,7 +15,7 @@
     "dev:api": "npm run dev -w @subflow/api",
     "dev:bot": "npm run dev -w @subflow/bot",
     "build": "npm run build -w @subflow/shared && npm run build -w @subflow/tma && npm run build -w @subflow/api && npm run build -w @subflow/bot",
-    "test": "npm run test -w @subflow/api",
+    "test": "npm run test -w @subflow/api && npm run test -w @subflow/bot",
     "db:generate": "npm run generate -w @subflow/api",
     "db:migrate": "npm run migrate -w @subflow/api"
   }

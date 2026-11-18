@@ -23,6 +23,7 @@ model User {
   plans           Plan[]
   memberships     Membership[]
   merchantKey     MerchantKey?
+  splits          SplitPool[]
 }
 
 model Subscription {
@@ -44,8 +45,10 @@ model Subscription {
   isTrial       Boolean    @default(false)
   trialEndsAt   DateTime?
   templateId    String?
+  chainNonce    BigInt     @unique
   createdAt     DateTime   @default(now())
   reminders     Reminder[]
+  splits        SplitPool[]
 
   @@index([userId, status])
   @@index([nextChargeAt])
@@ -71,6 +74,7 @@ model Plan {
   currency    String
   period      String
   chatId      String?
+  chainNonce  BigInt       @unique
   createdAt   DateTime     @default(now())
   memberships Membership[]
 
@@ -94,16 +98,51 @@ model Membership {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  txHash    String?  @unique
-  provider  String
-  userId    String?
-  planId    String?
-  comment   String?
-  amount    Decimal? @db.Decimal(18, 6)
-  currency  String?
-  status    String
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  txHash      String?   @unique
+  messageHash String?   @unique
+  boc         String?
+  provider    String
+  userId      String?
+  planId      String?
+  comment     String?
+  chainNonce  BigInt?
+  amount      Decimal?  @db.Decimal(18, 6)
+  currency    String?
+  status      String
+  attempts    Int       @default(0)
+  nextCheckAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([status, nextCheckAt])
+}
+
+model SplitPool {
+  id                String         @id
+  subscriptionId    String
+  subscription      Subscription   @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  ownerId           String
+  owner             User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  organizerAddress  String?
+  title             String
+  amount            Decimal        @db.Decimal(18, 6)
+  currency          String
+  createdAt         DateTime       @default(now())
+  members           SplitMember[]
+
+  @@index([ownerId])
+}
+
+model SplitMember {
+  id     String    @id
+  poolId String
+  pool   SplitPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  name   String
+  share  Decimal   @db.Decimal(18, 6)
+  status String    @default("pending")
+  isSelf Boolean   @default(false)
+
+  @@index([poolId])
 }
 
 model MerchantKey {

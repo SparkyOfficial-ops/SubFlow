@@ -89,3 +89,16 @@ export function planDurationDays(period: PlanPeriod): number | null {
   if (period === "quarter") return 90;
   return null;
 }
+
+/** 63-битный идентификатор, который помещается в uint64 контракта. UUID туда не влезает. */
+export function newChainNonce(): string {
+  const bytes = new Uint8Array(8);
+  globalThis.crypto.getRandomValues(bytes);
+  bytes[0] &= 0x7f;
+  if (bytes.every((item) => item === 0)) bytes[7] = 1;
+  let value = 0n;
+  for (const item of bytes) value = (value << 8n) + BigInt(item);
+  return value.toString();
+}
+
+export { PAY_TON_OPCODE, decodeJettonTransfer, decodePayTon, externalMessageHash, jettonTransferPayload, payTonPayload } from "./chain";

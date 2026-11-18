@@ -4,10 +4,16 @@ import "@stdlib/deploy";
 // Принимает оплату в TON, забирает комиссию и сразу отправляет остаток мерчанту.
 // Для USDT ждёт transfer_notification от своего jetton-кошелька и делает два jetton-перевода.
 
-message PayTon {
+message(0xA1F0C701) PayTon {
     merchant: Address;
     subscriptionId: Int as uint64;
     userId: Int as uint64;
+}
+
+message(0xA1F0C702) MerchantPayout {
+    subscriptionId: Int as uint64;
+    userId: Int as uint64;
+    payer: Address;
 }
 
 message SetFee {
@@ -64,13 +70,17 @@ contract SubscriptionRouter with Deployable {
         let gas = ton("0.02");
         require(incoming > fee + gas, "Cannot cover fee and gas");
         let payout = incoming - fee - gas;
-        let note = "sf:" + msg.subscriptionId.toString() + ":" + msg.userId.toString();
+        let payer = sender();
         send(SendParameters{
             to: msg.merchant,
             value: payout,
             mode: SendPayGasSeparately,
-            bounce: false,
-            body: note.asComment()
+            bounce: true,
+            body: MerchantPayout{
+                subscriptionId: msg.subscriptionId,
+                userId: msg.userId,
+                payer: payer
+            }.toCell()
         });
         if (fee > 0) {
             send(SendParameters{
@@ -96,7 +106,7 @@ contract SubscriptionRouter with Deployable {
         let payload = msg.forwardPayload;
         require(payload.remainingBits() >= 32 + 64 + 64 + 267, "Missing payment payload");
         let prefix = payload.loadUint(32);
-        require(prefix == 0, "Payload must start with a comment");
+        require(prefix == 0, "Unexpected payload");
         // Дальше бэкенд читает комментарий. Сумма и адреса лежат явно, чтобы не зависеть от текста.
         let subscriptionId = payload.loadUint(64);
         let userId = payload.loadUint(64);
@@ -129,16 +139,18 @@ contract SubscriptionRouter with Deployable {
         self.treasury = msg.treasury;
     }
 
-    bounced(src: bounced<PayTon>) {
-        // Отклонённый перевод мерчанту не должен оставлять контракт в промежуточном состоянии:
-        // TON уже ушёл отдельными сообщениями, событие фиксирует попытку для ручного разбора.
-        emit(PaymentAccepted{
-            subscriptionId: src.subscriptionId,
-            userId: src.userId,
-            merchant: src.merchant,
-            amount: 0,
-            currency: 0
-        }.toCell());
+    bounced(src: bounced<MerchantPayout>) {
+        // Отскочить может исходящая выплата мерчанту, а не входящий PayTon.
+        // Возвращённые TON уходят плательщику, комиссия казначейства этим сообщением не двигается.
+        let returned = context().value;
+        if (returned > ton("0.02")) {
+            send(SendParameters{
+                to: src.payer,
+                value: returned - ton("0.01"),
+                mode: SendPayGasSeparately,
+                bounce: false
+            });
+        }
     }
 
     fun forwardJetton(destination: Address, amount: Int) {

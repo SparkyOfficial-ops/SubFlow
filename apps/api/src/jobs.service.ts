@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { Queue, Worker } from "bullmq";
 import { GRACE_HOURS } from "@subflow/shared";
+import { graceDeadline } from "./rules";
 import { PrismaService } from "./prisma.service";
 import { PaymentsService } from "./payments.service";
 
@@ -44,6 +45,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async tick(): Promise<void> {
+    await this.payments.settleDue().catch((error: unknown) => this.logger.warn(String(error)));
     await this.remind();
     await this.revoke();
   }
@@ -73,7 +75,7 @@ export class JobsService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async revoke(): Promise<void> {
-    const deadline = new Date(Date.now() - GRACE_HOURS * 60 * 60 * 1000);
+    const deadline = graceDeadline(new Date(), GRACE_HOURS);
     const rows = await this.prisma.membership.findMany({
       where: { status: "active", expiresAt: { lt: deadline }, kickedAt: null },
       include: { plan: true, user: true },

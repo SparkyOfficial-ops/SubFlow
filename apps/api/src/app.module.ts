@@ -10,12 +10,13 @@ import {
   PaymentsController,
   SubscriptionsController,
 } from "./http.controller";
+import { MerchantController, PlansController, SplitsController } from "./extra.controller";
 import { PaymentsService } from "./payments.service";
 import { PrismaService } from "./prisma.service";
 import { allowRequest } from "./rate-limit";
 
 @Module({
-  controllers: [HealthController, AuthController, SubscriptionsController, CreatorsController, PaymentsController, InternalController],
+  controllers: [HealthController, AuthController, SubscriptionsController, CreatorsController, PaymentsController, InternalController, PlansController, SplitsController, MerchantController],
   providers: [PrismaService, CurrentUser, PaymentsService, JobsService],
 })
 export class AppModule implements NestModule {

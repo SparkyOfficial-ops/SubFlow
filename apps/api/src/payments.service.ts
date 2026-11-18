@@ -1,12 +1,15 @@
 import { createHmac, randomBytes } from "node:crypto";
-import { BadRequestException, Injectable, UnauthorizedException } from "@nestjs/common";
-import { addPeriod, monthlyEquivalent, planDurationDays } from "@subflow/shared";
+import { BadRequestException, Injectable, Logger, UnauthorizedException } from "@nestjs/common";
+import { addPeriod, externalMessageHash, monthlyEquivalent, planDurationDays, type SubPeriod } from "@subflow/shared";
 import { toNano } from "@ton/core";
 import { PrismaService } from "./prisma.service";
-import { findRouterTransfer } from "./ton";
+import { parseChainNonce, starsTarget } from "./rules";
+import { fetchMessageTransaction, officialUsdtWallet, paymentMatches } from "./ton";
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async invoiceLink(title: string, payload: string, stars: number): Promise<string> {
@@ -28,29 +31,117 @@ export class PaymentsService {
     return body.result;
   }
 
-  async confirmChain(userId: string, comment: string, currency: "TON" | "USDT") {
-    const planId = comment.startsWith("plan:") ? comment.slice(5) : undefined;
-    const plan = planId ? await this.prisma.plan.findUnique({ where: { id: planId } }) : null;
-    if (planId && (!plan || plan.currency !== currency)) throw new BadRequestException("Unknown plan");
-    const minUnits = plan ? (currency === "TON" ? toNano(plan.amount.toString()) : BigInt(Math.round(Number(plan.amount) * 1_000_000))) : 1n;
-    const found = await findRouterTransfer({ comment, currency, minUnits });
-    if (!found) return { status: "pending" as const };
-    const existing = await this.prisma.payment.findUnique({ where: { txHash: found.hash } });
-    if (existing) return { status: "confirmed" as const, txHash: found.hash };
-    await this.prisma.payment.create({
+  async submitChain(userId: string, input: { boc: string; currency: "TON" | "USDT"; chainNonce: string; kind: "plan" | "subscription" }) {
+    const nonce = parseChainNonce(input.chainNonce);
+    if (!nonce) throw new BadRequestException("chainNonce");
+    let messageHash: string;
+    try {
+      messageHash = externalMessageHash(input.boc);
+    } catch {
+      throw new BadRequestException("boc");
+    }
+    const plan = input.kind === "plan" ? await this.prisma.plan.findFirst({ where: { chainNonce: nonce }, include: { owner: true } }) : null;
+    if (input.kind === "plan" && (!plan || plan.currency !== input.currency)) throw new BadRequestException("Unknown plan");
+    if (plan && !plan.owner.walletAddress) throw new BadRequestException("Merchant wallet is not set");
+    const subscription = input.kind === "subscription"
+      ? await this.prisma.subscription.findFirst({ where: { chainNonce: nonce, userId } })
+      : null;
+    if (input.kind === "subscription" && (!subscription || subscription.currency !== input.currency)) throw new BadRequestException("Unknown subscription");
+    const existing = await this.prisma.payment.findUnique({ where: { messageHash } });
+    if (existing?.status === "confirmed") return { id: existing.id, status: "confirmed" as const, txHash: existing.txHash };
+    if (existing && existing.userId !== userId) throw new UnauthorizedException();
+    const payment = existing ?? await this.prisma.payment.create({
       data: {
-        txHash: found.hash,
-        provider: currency,
+        messageHash,
+        boc: input.boc.slice(0, 12_000),
+        provider: input.currency,
         userId,
         planId: plan?.id,
-        comment,
-        amount: plan?.amount,
-        currency,
-        status: "confirmed",
+        chainNonce: nonce,
+        comment: `${input.kind}:${nonce.toString()}`,
+        amount: plan?.amount ?? subscription?.amount,
+        currency: input.currency,
+        status: "pending",
+        nextCheckAt: new Date(),
       },
     });
-    if (plan) await this.grant(plan.id, userId, found.hash, false);
-    return { status: "confirmed" as const, txHash: found.hash };
+    return this.trySettle(payment.id);
+  }
+
+  async paymentStatus(userId: string, id: string) {
+    const row = await this.prisma.payment.findFirst({ where: { id, userId } });
+    if (!row) throw new UnauthorizedException();
+    if (row.status === "pending") return this.trySettle(row.id);
+    return { id: row.id, status: row.status, txHash: row.txHash };
+  }
+
+  async settleDue(): Promise<void> {
+    const due = await this.prisma.payment.findMany({
+      where: {
+        status: "pending",
+        attempts: { lt: 40 },
+        OR: [{ nextCheckAt: null }, { nextCheckAt: { lte: new Date() } }],
+      },
+      take: 25,
+    });
+    for (const row of due) {
+      await this.trySettle(row.id).catch((error: unknown) => this.logger.warn(String(error)));
+    }
+  }
+
+  async trySettle(id: string) {
+    const row = await this.prisma.payment.findUnique({ where: { id } });
+    if (!row) return { id, status: "missing" as const };
+    if (row.status !== "pending" || !row.messageHash || !row.chainNonce || !row.userId || (row.currency !== "TON" && row.currency !== "USDT")) {
+      return { id: row.id, status: row.status, txHash: row.txHash };
+    }
+    const user = await this.prisma.user.findUnique({ where: { id: row.userId } });
+    const router = process.env.ROUTER_ADDRESS;
+    if (!user || !router) return { id: row.id, status: "pending" as const };
+    const tx = await fetchMessageTransaction(row.messageHash);
+    if (!tx) return this.defer(row.id);
+    const plan = row.planId ? await this.prisma.plan.findUnique({ where: { id: row.planId }, include: { owner: true } }) : null;
+    const minUnits = row.currency === "TON" ? toNano((row.amount ?? 0).toString()) : BigInt(Math.round(Number(row.amount ?? 0) * 1_000_000));
+    const usdtWallet = row.currency === "USDT" && tx.account?.address ? await officialUsdtWallet(tx.account.address) : undefined;
+    if (row.currency === "USDT" && !usdtWallet) return this.defer(row.id);
+    const matched = paymentMatches(tx, {
+      currency: row.currency,
+      router,
+      chainNonce: row.chainNonce,
+      telegramId: user.telegramId,
+      minUnits,
+      merchant: plan?.owner.walletAddress ?? undefined,
+      usdtWallet: usdtWallet ?? undefined,
+    });
+    if (!matched) return row.attempts < 4 ? this.defer(row.id) : this.reject(row.id);
+    const hash = tx.hash ?? row.messageHash;
+    await this.prisma.payment.update({ where: { id: row.id }, data: { status: "confirmed", txHash: hash, attempts: { increment: 1 } } });
+    if (plan) await this.grant(plan.id, user.id, hash, false);
+    else await this.bumpSubscription(row.chainNonce, user.id);
+    return { id: row.id, status: "confirmed" as const, txHash: hash };
+  }
+
+  private async defer(id: string) {
+    await this.prisma.payment.update({
+      where: { id },
+      data: { attempts: { increment: 1 }, nextCheckAt: new Date(Date.now() + 15_000) },
+    });
+    return { id, status: "pending" as const };
+  }
+
+  private async reject(id: string) {
+    await this.prisma.payment.update({ where: { id }, data: { status: "rejected", attempts: { increment: 1 } } });
+    return { id, status: "rejected" as const };
+  }
+
+  private async bumpSubscription(chainNonce: bigint, userId: string) {
+    const sub = await this.prisma.subscription.findFirst({ where: { chainNonce, userId } });
+    if (!sub) return;
+    const base = sub.nextChargeAt > new Date() ? sub.nextChargeAt : new Date();
+    await this.prisma.subscription.update({
+      where: { id: sub.id },
+      data: { status: "active", nextChargeAt: addPeriod(base, sub.period as SubPeriod, sub.customDays), isTrial: false },
+    });
   }
 
   async confirmStars(input: { payload: string; chargeId: string; telegramId: string; amount: number }) {
@@ -58,15 +149,16 @@ export class PaymentsService {
     if (existing) return { status: "confirmed" as const };
     const user = await this.prisma.user.findUnique({ where: { telegramId: BigInt(input.telegramId) } });
     if (!user) throw new UnauthorizedException();
-    if (input.payload === "plus") {
+    const target = starsTarget(input.payload, input.telegramId);
+    if (!target) throw new BadRequestException("Invoice does not match the payer");
+    if (target.kind === "plus") {
       await this.prisma.payment.create({
         data: { txHash: input.chargeId, provider: "STARS", userId: user.id, comment: "plus", amount: input.amount, currency: "STARS", status: "confirmed" },
       });
       await this.prisma.user.update({ where: { id: user.id }, data: { plusUntil: addPeriod(new Date(), "month") } });
       return { status: "confirmed" as const };
     }
-    const planId = input.payload.split(":")[1];
-    const plan = planId ? await this.prisma.plan.findUnique({ where: { id: planId } }) : null;
+    const plan = await this.prisma.plan.findUnique({ where: { id: target.planId } });
     if (!plan || plan.currency !== "STARS" || Number(plan.amount) !== input.amount) throw new BadRequestException("Invoice does not match the plan");
     await this.prisma.payment.create({
       data: { txHash: input.chargeId, provider: "STARS", userId: user.id, planId: plan.id, comment: input.payload, amount: input.amount, currency: "STARS", status: "confirmed" },

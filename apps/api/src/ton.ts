@@ -1,62 +1,112 @@
-import { Address } from "@ton/core";
+import { Address, Cell } from "@ton/core";
+import { USDT_MASTER, decodeJettonTransfer, decodePayTon } from "@subflow/shared";
 
 export function sameAddress(left: string, right: string): boolean {
   try {
     return Address.parse(left).equals(Address.parse(right));
   } catch {
-    return left === right;
+    return false;
   }
 }
 
-interface TonMessage {
+export interface ChainMessage {
   value?: string | number;
-  destination?: { address?: string };
-  decoded_op_name?: string;
-  decoded_body?: { text?: string; amount?: string | number } | null;
+  destination?: { address?: string } | string;
+  raw_body?: string;
+  msg_data?: { body?: string };
 }
 
-interface TonTransaction {
-  hash: string;
+export interface ChainTransaction {
+  hash?: string;
   success?: boolean;
-  in_msg?: TonMessage;
+  account?: { address?: string };
+  in_msg?: ChainMessage | null;
+  out_msgs?: ChainMessage[];
 }
 
-export interface ConfirmedTransfer {
-  hash: string;
-  payer?: string;
-}
-
-/** Ищет уже финализированный перевод на контракт платформы. Клиентский boc доказательством не считается. */
-export async function findRouterTransfer(input: {
-  comment: string;
+export interface ExpectedPayment {
   currency: "TON" | "USDT";
+  router: string;
+  chainNonce: bigint;
+  telegramId: bigint;
   minUnits: bigint;
-}): Promise<ConfirmedTransfer | null> {
-  const router = process.env.ROUTER_ADDRESS;
-  if (!router) return null;
-  const endpoint = (process.env.TONAPI_ENDPOINT || "https://tonapi.io").replace(/\/$/, "");
-  const headers: Record<string, string> = {};
-  if (process.env.TONAPI_KEY) headers.Authorization = `Bearer ${process.env.TONAPI_KEY}`;
-  const response = await fetch(`${endpoint}/v2/blockchain/accounts/${encodeURIComponent(router)}/transactions?limit=40`, { headers });
-  if (!response.ok) return null;
-  const body = (await response.json()) as { transactions?: TonTransaction[] };
-  for (const tx of body.transactions ?? []) {
-    if (tx.success === false) continue;
-    const message = tx.in_msg;
-    const destination = message?.destination?.address;
-    if (!destination || !sameAddress(destination, router)) continue;
-    if (input.currency === "TON") {
-      const text = message?.decoded_body?.text ?? "";
-      const value = BigInt(message?.value ?? 0);
-      if (text === input.comment && value >= input.minUnits) return { hash: tx.hash };
-    } else {
-      const decoded = message?.decoded_body;
-      if (!decoded) continue;
-      const serialized = JSON.stringify(decoded);
-      const amount = BigInt(decoded.amount ?? 0);
-      const looksLikeJetton = (message?.decoded_op_name ?? "").toLowerCase().includes("jetton") || "amount" in decoded;
-      if (looksLikeJetton && serialized.includes(input.comment) && amount >= input.minUnits) return { hash: tx.hash };
+  merchant?: string;
+  /** Настоящий USDT-кошелёк плательщика, выпущенный мастер-контрактом USDT. */
+  usdtWallet?: string;
+}
+
+function destinationOf(message: ChainMessage): string | undefined {
+  if (!message.destination) return undefined;
+  return typeof message.destination === "string" ? message.destination : message.destination.address;
+}
+
+function bodyOf(message: ChainMessage): Cell | null {
+  const raw = message.raw_body || message.msg_data?.body;
+  if (!raw) return null;
+  try {
+    return Cell.fromBase64(raw);
+  } catch {
+    try {
+      return Cell.fromBoc(Buffer.from(raw, "hex"))[0] ?? null;
+    } catch {
+      return null;
     }
   }
-  return null;
+}
+
+function merchantOk(found: string, expected?: string): boolean {
+  return !expected || sameAddress(found, expected);
+}
+
+/** Сверяет уже попавшую в блок транзакцию с ожидаемым платежом. Комментарий в JSON не принимается. */
+export function paymentMatches(tx: ChainTransaction, expected: ExpectedPayment): boolean {
+  if (tx.success === false) return false;
+  const messages = [tx.in_msg, ...(tx.out_msgs ?? [])].filter((item): item is ChainMessage => Boolean(item));
+  for (const message of messages) {
+    const cell = bodyOf(message);
+    if (!cell) continue;
+    if (expected.currency === "TON") {
+      const decoded = decodePayTon(cell);
+      const destination = destinationOf(message);
+      const value = BigInt(message.value ?? 0);
+      if (!decoded || !destination || !sameAddress(destination, expected.router)) continue;
+      if (decoded.chainNonce !== expected.chainNonce || decoded.telegramId !== expected.telegramId) continue;
+      if (!merchantOk(decoded.merchant, expected.merchant) || value < expected.minUnits) continue;
+      return true;
+    }
+    if (!expected.usdtWallet) continue;
+    const jettonDestination = destinationOf(message);
+    if (!jettonDestination || !sameAddress(jettonDestination, expected.usdtWallet)) continue;
+    const decoded = decodeJettonTransfer(cell);
+    if (!decoded || !sameAddress(decoded.destination, expected.router)) continue;
+    if (decoded.chainNonce !== expected.chainNonce || decoded.telegramId !== expected.telegramId) continue;
+    if (!merchantOk(decoded.merchant, expected.merchant) || decoded.amount < expected.minUnits) continue;
+    return true;
+  }
+  return false;
+}
+
+function endpoint(): string {
+  return (process.env.TONAPI_ENDPOINT || "https://tonapi.io").replace(/\/$/, "");
+}
+
+function headers(): Record<string, string> {
+  const result: Record<string, string> = {};
+  if (process.env.TONAPI_KEY) result.Authorization = `Bearer ${process.env.TONAPI_KEY}`;
+  return result;
+}
+
+export async function fetchMessageTransaction(messageHash: string): Promise<ChainTransaction | null> {
+  const response = await fetch(`${endpoint()}/v2/blockchain/messages/${encodeURIComponent(messageHash)}/transaction`, { headers: headers() });
+  if (!response.ok) return null;
+  return (await response.json()) as ChainTransaction;
+}
+
+/** Кошелёк USDT, который TonAPI выводит из мастер-контракта, а не из комментария перевода. */
+export async function officialUsdtWallet(owner: string): Promise<string | null> {
+  const master = process.env.USDT_MASTER || USDT_MASTER;
+  const response = await fetch(`${endpoint()}/v2/accounts/${encodeURIComponent(owner)}/jettons/${encodeURIComponent(master)}`, { headers: headers() });
+  if (!response.ok) return null;
+  const body = (await response.json()) as { wallet_address?: { address?: string } };
+  return body.wallet_address?.address ?? null;
 }

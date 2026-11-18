@@ -10,7 +10,7 @@
     "start": "node dist/main.js",
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
-    "test": "tsx --test src/telegram-auth.test.ts"
+    "test": "npm run build --prefix ../../packages/shared && tsx --test src/telegram-auth.test.ts src/flow.test.ts src/rate-limit.test.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.4.15",

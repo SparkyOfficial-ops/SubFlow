@@ -9,6 +9,7 @@ import { CreatorHub } from "./screens/CreatorHub";
 import { Dashboard } from "./screens/Dashboard";
 import { SubscriptionDetail } from "./screens/Detail";
 import { Onboarding } from "./screens/Onboarding";
+import { PlanCheckout } from "./screens/PlanCheckout";
 import { Profile } from "./screens/Profile";
 import { SplitPay } from "./screens/SplitPay";
 import { Subscriptions } from "./screens/Subscriptions";
@@ -23,13 +24,14 @@ function Screens() {
   useEffect(() => {
     const param = runtime.startParam;
     if (!param) return;
-    if (param.startsWith("split_")) setRoute({ name: "split" });
-    if (param.startsWith("plan_")) setRoute({ name: "creator" });
+    if (param.startsWith("split_")) setRoute({ name: "split", poolId: param.slice("split_".length) });
+    if (param.startsWith("plan_")) setRoute({ name: "checkout", planId: param.slice("plan_".length) });
   }, [setRoute]);
 
   if (route.name === "add") return <AddSubscription />;
   if (route.name === "detail") return <SubscriptionDetail id={route.id} />;
-  if (route.name === "split") return <SplitPay subscriptionId={route.subscriptionId} />;
+  if (route.name === "split") return <SplitPay subscriptionId={route.subscriptionId} poolId={route.poolId} />;
+  if (route.name === "checkout") return <PlanCheckout planId={route.planId} />;
   if (route.name === "home") {
     return (
       <div>
@@ -55,7 +57,7 @@ export function App() {
   }, []);
 
   const route = useAppStore((state) => state.route);
-  const pushed = route.name === "add" || route.name === "detail" || route.name === "split";
+  const pushed = route.name === "add" || route.name === "detail" || route.name === "split" || route.name === "checkout";
 
   return (
     <TonConnectUIProvider manifestUrl={manifest}>

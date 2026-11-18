@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { createStarsInvoice, me } from "../api";
 import { formatMoney, inDisplay } from "../money";
 import { Mark } from "../components/ui";
 import { useAppStore } from "../store";
-import { haptic } from "../telegram";
+import { haptic, runtime } from "../telegram";
 
 export function Subscriptions() {
   const { t } = useTranslation();
   const [archive, setArchive] = useState(false);
   const [limit, setLimit] = useState(false);
+  const [plusNote, setPlusNote] = useState("");
   const subs = useAppStore((state) => state.subscriptions);
   const currency = useAppStore((state) => state.displayCurrency);
   const setRoute = useAppStore((state) => state.setRoute);
+  const setPlus = useAppStore((state) => state.setPlus);
   const canAdd = useAppStore((state) => state.canAdd);
   const visible = subs.filter((item) => (archive ? item.status === "cancelled" : item.status !== "cancelled"));
 
@@ -22,6 +25,36 @@ export function Subscriptions() {
       return;
     }
     setRoute({ name: "add" });
+  };
+
+  const buyPlus = async () => {
+    if (!runtime.inTelegram || !window.Telegram?.WebApp?.openInvoice) {
+      setPlusNote(t("pay.starsNeedTg"));
+      return;
+    }
+    const url = await createStarsInvoice({ id: "plus", title: "SubFlow Plus", amount: 100 });
+    if (!url) {
+      setPlusNote(t("pay.starsNeedTg"));
+      return;
+    }
+    window.Telegram.WebApp.openInvoice(url, (status) => {
+      if (status !== "paid") {
+        setPlusNote(t("pay.failed"));
+        return;
+      }
+      void (async () => {
+        for (let attempt = 0; attempt < 6; attempt += 1) {
+          const profile = await me();
+          if (profile?.plusUntil && new Date(profile.plusUntil).getTime() > Date.now()) {
+            setPlus(true);
+            setLimit(false);
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+        setPlusNote(t("subs.plusPending"));
+      })();
+    });
   };
 
   return (
@@ -62,9 +95,9 @@ export function Subscriptions() {
             <h3>{t("subs.limitTitle")}</h3>
             <p className="muted">{t("subs.limitText")}</p>
             <div className="stack">
-              <button type="button" className="primary" onClick={() => setLimit(false)}>
-                {t("subs.later")}
-              </button>
+              <button type="button" className="primary" onClick={() => void buyPlus()}>{t("subs.upgrade")}</button>
+              <button type="button" className="ghost" onClick={() => setLimit(false)}>{t("subs.later")}</button>
+              {plusNote && <p className="notice">{plusNote}</p>}
             </div>
           </div>
         </div>

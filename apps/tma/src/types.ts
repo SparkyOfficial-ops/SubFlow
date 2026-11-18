@@ -24,6 +24,7 @@ export interface Subscription {
   isTrial: boolean;
   trialEndsAt?: string;
   templateId?: string;
+  chainNonce?: string;
 }
 
 export interface SplitMember {
@@ -38,6 +39,10 @@ export interface SplitPool {
   id: string;
   subscriptionId: string;
   organizerAddress?: string;
+  title?: string;
+  amount?: number;
+  currency?: string;
+  color?: string;
   members: SplitMember[];
 }
 
@@ -48,6 +53,8 @@ export interface CreatorPlan {
   currency: "TON" | "USDT" | "STARS";
   period: PlanPeriod;
   chatId?: string;
+  chainNonce?: string;
+  ownerWallet?: string;
 }
 
 export type Tab = "home" | "subs" | "calendar" | "creator" | "profile";
@@ -56,5 +63,6 @@ export type Route =
   | { name: Tab }
   | { name: "add" }
   | { name: "detail"; id: string }
-  | { name: "split"; subscriptionId?: string }
+  | { name: "split"; subscriptionId?: string; poolId?: string }
+  | { name: "checkout"; planId: string }
   | { name: "plan" };

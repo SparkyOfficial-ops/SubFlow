@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { PLAN_PERIODS, type PlanPeriod } from "@subflow/shared";
-import { createStarsInvoice } from "../api";
+import { PLAN_PERIODS, newChainNonce, type PlanPeriod } from "@subflow/shared";
+import { analytics, createStarsInvoice, savePlan, sessionToken } from "../api";
 import { formatMoney } from "../money";
 import { useAppStore } from "../store";
 import type { CreatorPlan } from "../types";
@@ -12,6 +12,7 @@ export function CreatorHub() {
   const plans = useAppStore((state) => state.plans);
   const save = useAppStore((state) => state.savePlan);
   const remove = useAppStore((state) => state.removePlan);
+  const setRoute = useAppStore((state) => state.setRoute);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("5");
@@ -19,19 +20,39 @@ export function CreatorHub() {
   const [period, setPeriod] = useState<PlanPeriod>("month");
   const [chatId, setChatId] = useState("");
   const [note, setNote] = useState("");
+  const [stats, setStats] = useState<{ mrr: number; active: number; churn: number } | null>(null);
   const bot = import.meta.env.VITE_BOT_USERNAME || "SubFlowBot";
 
-  const submit = () => {
+  useEffect(() => {
+    void analytics().then((row) => {
+      if (row) setStats(row);
+    });
+  }, []);
+
+  const submit = async () => {
     const value = Number(amount);
     if (!title.trim() || !value) return;
-    save({
+    const plan: CreatorPlan = {
       id: crypto.randomUUID(),
+      chainNonce: newChainNonce(),
       title: title.trim(),
       amount: value,
       currency,
       period,
       chatId: chatId.trim() || undefined,
-    });
+      ownerWallet: useAppStore.getState().walletAddress,
+    };
+    save(plan);
+    if (sessionToken()) {
+      const stored = await savePlan(plan);
+      if (!stored) {
+        remove(plan.id);
+        setNote(t("creator.saveFailed"));
+        return;
+      }
+    } else if (import.meta.env.VITE_API_URL) {
+      setNote(t("creator.needAuth"));
+    }
     setTitle("");
     setOpen(false);
     void haptic("success");
@@ -42,13 +63,18 @@ export function CreatorHub() {
       setNote(t("pay.starsNeedTg"));
       return;
     }
+    const stored = await savePlan(plan);
+    if (sessionToken() && !stored) {
+      setNote(t("creator.saveFailed"));
+      return;
+    }
     const url = await createStarsInvoice({ id: plan.id, title: plan.title, amount: Math.round(plan.amount) });
     if (!url) {
       setNote(t("pay.starsNeedTg"));
       return;
     }
     window.Telegram.WebApp.openInvoice(url, (status) => {
-      setNote(status === "paid" ? t("pay.sent") : t("pay.failed"));
+      setNote(status === "paid" ? t("pay.confirmed") : t("pay.failed"));
     });
   };
 
@@ -57,10 +83,10 @@ export function CreatorHub() {
       <h1 className="screen-title">{t("creator.title")}</h1>
       <p className="muted">{t("creator.lead")}</p>
       <div className="hero" style={{ marginTop: 14 }}>
-        <div className="spread"><span>{t("creator.mrr")}</span><b>0</b></div>
-        <div className="spread" style={{ marginTop: 8 }}><span>{t("creator.active")}</span><b>0</b></div>
-        <div className="spread" style={{ marginTop: 8 }}><span>{t("creator.churn")}</span><b>0%</b></div>
-        <p className="notice">{t("creator.analyticsEmpty")}</p>
+        <div className="spread"><span>{t("creator.mrr")}</span><b>{stats ? stats.mrr.toFixed(2) : "—"}</b></div>
+        <div className="spread" style={{ marginTop: 8 }}><span>{t("creator.active")}</span><b>{stats ? stats.active : "—"}</b></div>
+        <div className="spread" style={{ marginTop: 8 }}><span>{t("creator.churn")}</span><b>{stats ? `${Math.round(stats.churn * 100)}%` : "—"}</b></div>
+        {(!stats || stats.active === 0) && <p className="notice">{t("creator.analyticsEmpty")}</p>}
       </div>
       <p className="notice">{t("creator.chatHint", { bot })}</p>
       <section className="section">
@@ -77,6 +103,9 @@ export function CreatorHub() {
               <div className="stack" style={{ marginTop: 8 }}>
                 {plan.currency === "STARS" && (
                   <button type="button" className="primary" onClick={() => void stars(plan)}>{t("creator.stars")}</button>
+                )}
+                {(plan.currency === "TON" || plan.currency === "USDT") && (
+                  <button type="button" className="primary" onClick={() => setRoute({ name: "checkout", planId: plan.id })}>{t("creator.crypto")}</button>
                 )}
                 <button type="button" className="danger" onClick={() => remove(plan.id)}>{t("detail.remove")}</button>
               </div>
@@ -107,7 +136,7 @@ export function CreatorHub() {
           </label>
           <label className="field">{t("creator.chat")}<input value={chatId} onChange={(event) => setChatId(event.target.value)} placeholder="-100..." /></label>
           <div className="stack" style={{ marginTop: 12 }}>
-            <button type="button" className="primary" onClick={submit}>{t("creator.save")}</button>
+            <button type="button" className="primary" onClick={() => void submit()}>{t("creator.save")}</button>
             <button type="button" className="ghost" onClick={() => setOpen(false)}>{t("subs.later")}</button>
           </div>
         </div>

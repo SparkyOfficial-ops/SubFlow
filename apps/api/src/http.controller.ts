@@ -9,13 +9,16 @@ import {
   Param,
   Patch,
   Post,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
-import { IsBoolean, IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
-import { FREE_SUBSCRIPTION_LIMIT, PLAN_PERIODS, type PlanPeriod } from "@subflow/shared";
+import { IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import Redis from "ioredis";
+import { DISPLAY_CURRENCIES, FREE_SUBSCRIPTION_LIMIT, PLAN_PERIODS, newChainNonce, type DisplayCurrency, type PlanPeriod } from "@subflow/shared";
 import { PaymentsService } from "./payments.service";
-import { verifyInitData } from "./telegram-auth";
 import { PrismaService } from "./prisma.service";
+import { parseChainNonce } from "./rules";
+import { verifyInitData } from "./telegram-auth";
 import { readSession, signSession } from "./token";
 
 class TelegramAuthDto {
@@ -41,6 +44,7 @@ class SubscriptionDto {
   @IsOptional() @IsString() trialEndsAt?: string;
   @IsOptional() @IsString() templateId?: string;
   @IsOptional() @IsString() status?: string;
+  @IsOptional() @IsString() chainNonce?: string;
 }
 
 class PatchSubscriptionDto {
@@ -56,6 +60,7 @@ class PlanDto {
   @IsIn(["TON", "USDT", "STARS"]) currency!: "TON" | "USDT" | "STARS";
   @IsIn(PLAN_PERIODS) period!: PlanPeriod;
   @IsOptional() @IsString() chatId?: string;
+  @IsOptional() @IsString() chainNonce?: string;
 }
 
 class InvoiceDto {
@@ -65,8 +70,16 @@ class InvoiceDto {
 }
 
 class ChainDto {
-  @IsString() comment!: string;
+  @IsString() boc!: string;
   @IsIn(["TON", "USDT"]) currency!: "TON" | "USDT";
+  @IsString() chainNonce!: string;
+  @IsIn(["plan", "subscription"]) kind!: "plan" | "subscription";
+}
+
+class ProfileDto {
+  @IsOptional() @IsIn(DISPLAY_CURRENCIES) displayCurrency?: DisplayCurrency;
+  @IsOptional() @IsArray() @IsInt({ each: true }) notifyDays?: number[];
+  @IsOptional() @IsString() walletAddress?: string;
 }
 
 class StarsDto {
@@ -97,9 +110,28 @@ export class CurrentUser {
 
 @Controller()
 export class HealthController {
+  constructor(private readonly prisma: PrismaService) {}
+
   @Get("health")
-  health() {
-    return { ok: true, service: "subflow-api" };
+  async health() {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+    } catch {
+      throw new ServiceUnavailableException("database");
+    }
+    let redis: "up" | "down" | "skipped" = "skipped";
+    if (process.env.REDIS_URL) {
+      const client = new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: 1, connectTimeout: 1500, enableOfflineQueue: false });
+      try {
+        redis = (await client.ping()) === "PONG" ? "up" : "down";
+      } catch {
+        redis = "down";
+      } finally {
+        client.disconnect();
+      }
+      if (redis !== "up") throw new ServiceUnavailableException("redis");
+    }
+    return { ok: true, service: "subflow-api", db: "up", redis };
   }
 }
 
@@ -129,10 +161,40 @@ export class AuthController {
         language: verified.user.language_code ?? "en",
       },
     });
-    return {
-      token: signSession(user.id, user.telegramId.toString()),
-      user: { id: user.id, firstName: user.firstName, language: user.language },
-    };
+    return { token: signSession(user.id, user.telegramId.toString()), user: publicUser(user) };
+  }
+
+  @Get("me")
+  async me(@Headers("authorization") authorization?: string) {
+    const user = await this.userFrom(authorization);
+    return publicUser(user);
+  }
+
+  @Patch("me")
+  async update(@Headers("authorization") authorization: string | undefined, @Body() body: ProfileDto) {
+    const user = await this.userFrom(authorization);
+    if (body.notifyDays && (body.notifyDays.length === 0 || body.notifyDays.length > 7 || body.notifyDays.some((day) => day < 1 || day > 30))) {
+      throw new BadRequestException("notifyDays");
+    }
+    const saved = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        displayCurrency: body.displayCurrency,
+        notifyDays: body.notifyDays,
+        walletAddress: body.walletAddress === undefined ? undefined : body.walletAddress || null,
+      },
+    });
+    return publicUser(saved);
+  }
+
+  private async userFrom(authorization?: string) {
+    const token = authorization?.replace(/^Bearer\s+/i, "");
+    if (!token) throw new UnauthorizedException();
+    const session = readSession(token);
+    if (!session) throw new UnauthorizedException();
+    const user = await this.prisma.user.findUnique({ where: { id: session.sub } });
+    if (!user) throw new UnauthorizedException();
+    return user;
   }
 }
 
@@ -178,9 +240,10 @@ export class SubscriptionsController {
       templateId: body.templateId,
       status: body.status ?? "active",
     };
+    const chainNonce = existing?.chainNonce ?? nonceOrNew(body.chainNonce);
     const row = existing
       ? await this.prisma.subscription.update({ where: { id: existing.id }, data })
-      : await this.prisma.subscription.create({ data: { ...data, id: body.id, userId: user.id } });
+      : await this.prisma.subscription.create({ data: { ...data, id: body.id, userId: user.id, chainNonce } });
     return serializeSubscription(row);
   }
 
@@ -219,7 +282,7 @@ export class CreatorsController {
   @Get("plans")
   async plans(@Headers("authorization") authorization?: string) {
     const user = await this.current.from(authorization);
-    return this.prisma.plan.findMany({ where: { ownerId: user.id }, orderBy: { createdAt: "desc" } });
+    return this.prisma.plan.findMany({ where: { ownerId: user.id }, orderBy: { createdAt: "desc" } }).then((rows) => rows.map(serializePlan));
   }
 
   @Post("plans")
@@ -227,11 +290,13 @@ export class CreatorsController {
     const user = await this.current.from(authorization);
     const existing = await this.prisma.plan.findUnique({ where: { id: body.id } });
     if (existing && existing.ownerId !== user.id) throw new UnauthorizedException();
-    return this.prisma.plan.upsert({
+    const chainNonce = existing?.chainNonce ?? nonceOrNew(body.chainNonce);
+    const saved = await this.prisma.plan.upsert({
       where: { id: body.id },
-      create: { ...body, ownerId: user.id },
+      create: { id: body.id, ownerId: user.id, title: body.title, amount: body.amount, currency: body.currency, period: body.period, chatId: body.chatId, chainNonce },
       update: { title: body.title, amount: body.amount, currency: body.currency, period: body.period, chatId: body.chatId },
     });
+    return serializePlan(saved);
   }
 
   @Get("analytics")
@@ -271,7 +336,13 @@ export class PaymentsController {
   @Post("chain")
   async chain(@Headers("authorization") authorization: string | undefined, @Body() body: ChainDto) {
     const user = await this.current.from(authorization);
-    return this.payments.confirmChain(user.id, body.comment, body.currency);
+    return this.payments.submitChain(user.id, body);
+  }
+
+  @Get(":id")
+  async status(@Param("id") id: string, @Headers("authorization") authorization?: string) {
+    const user = await this.current.from(authorization);
+    return this.payments.paymentStatus(user.id, id);
   }
 }
 
@@ -303,11 +374,62 @@ function serializeSubscription(row: {
   isTrial: boolean;
   trialEndsAt: Date | null;
   templateId: string | null;
+  chainNonce: bigint;
 }) {
   return {
     ...row,
     amount: Number(row.amount),
+    chainNonce: row.chainNonce.toString(),
     nextChargeAt: row.nextChargeAt.toISOString(),
     trialEndsAt: row.trialEndsAt?.toISOString() ?? null,
   };
+}
+
+function serializePlan(row: {
+  id: string;
+  title: string;
+  amount: { toString(): string };
+  currency: string;
+  period: string;
+  chatId: string | null;
+  chainNonce: bigint;
+}) {
+  return {
+    id: row.id,
+    title: row.title,
+    amount: Number(row.amount),
+    currency: row.currency,
+    period: row.period,
+    chatId: row.chatId,
+    chainNonce: row.chainNonce.toString(),
+  };
+}
+
+function publicUser(user: {
+  id: string;
+  firstName: string;
+  language: string;
+  displayCurrency: string;
+  notifyDays: number[];
+  walletAddress: string | null;
+  plusUntil: Date | null;
+  telegramId: bigint;
+}) {
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    language: user.language,
+    displayCurrency: user.displayCurrency,
+    notifyDays: user.notifyDays,
+    walletAddress: user.walletAddress,
+    plusUntil: user.plusUntil?.toISOString() ?? null,
+    telegramId: user.telegramId.toString(),
+  };
+}
+
+function nonceOrNew(value?: string): bigint {
+  if (!value) return BigInt(newChainNonce());
+  const parsed = parseChainNonce(value);
+  if (!parsed) throw new BadRequestException("chainNonce");
+  return parsed;
 }

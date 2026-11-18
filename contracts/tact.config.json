@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tact-lang/tact/main/src/config/configSchema.json",
+  "projects": [
+    {
+      "name": "SubscriptionRouter",
+      "path": "./subscription_router.tact",
+      "output": "./build/SubscriptionRouter",
+      "options": { "debug": true, "external": true }
+    },
+    {
+      "name": "UserVault",
+      "path": "./user_vault.tact",
+      "output": "./build/UserVault",
+      "options": { "debug": true, "external": true }
+    }
+  ]
+}

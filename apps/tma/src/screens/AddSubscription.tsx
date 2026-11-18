@@ -35,6 +35,16 @@ export function AddSubscription() {
   const [trialDate, setTrialDate] = useState(date);
   const [error, setError] = useState("");
 
+  const clearTemplate = () => {
+    setTemplateId(null);
+    setName("");
+    setAmount("");
+    setCurrency("USD");
+    setPeriod("month");
+    setCategory("other");
+    setMethod("card");
+  };
+
   const apply = (id: string) => {
     const next = TEMPLATES.find((item) => item.id === id);
     if (!next) return;
@@ -90,6 +100,10 @@ export function AddSubscription() {
       </div>
       <p className="eyebrow">{t("add.templates")}</p>
       <div className="templates">
+        <button type="button" className={templateId === null ? "template active" : "template"} onClick={clearTemplate}>
+          <span className="mark" style={{ background: "#5b6b7c", width: 28, height: 28 }}>Aa</span>
+          <span className="row-meta" style={{ display: "block", marginTop: 8 }}>{t("add.custom")}</span>
+        </button>
         {TEMPLATES.map((item) => (
           <button type="button" key={item.id} className={item.id === templateId ? "template active" : "template"} onClick={() => apply(item.id)}>
             <span className="mark" style={{ background: item.color, width: 28, height: 28 }}>{item.emoji}</span>

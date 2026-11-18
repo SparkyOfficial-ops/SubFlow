@@ -1,0 +1,16 @@
+{
+  "name": "@subflow/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tact --config tact.config.json",
+    "test": "tsx --test tests/payload.test.ts"
+  },
+  "devDependencies": {
+    "@tact-lang/compiler": "^1.6.13",
+    "@ton/core": "^0.59.1",
+    "@ton/sandbox": "^0.30.0",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3"
+  }
+}

@@ -3,8 +3,23 @@ import Redis from "ioredis";
 const buckets = new Map<string, { count: number; reset: number }>();
 let redis: Redis | null = null;
 
+export function bucketCount(): number {
+  return buckets.size;
+}
+
+export function bucketHas(key: string): boolean {
+  return buckets.has(key);
+}
+
+export function dropExpiredBuckets(now = Date.now()): void {
+  for (const [key, bucket] of buckets) {
+    if (bucket.reset <= now) buckets.delete(key);
+  }
+}
+
 function memoryAllow(key: string, limit: number, windowMs: number): boolean {
   const now = Date.now();
+  dropExpiredBuckets(now);
   const bucket = buckets.get(key);
   if (!bucket || bucket.reset < now) {
     buckets.set(key, { count: 1, reset: now + windowMs });

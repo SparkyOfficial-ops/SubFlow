@@ -58,6 +58,7 @@ export const ru = {
     limitText: "Безлимит, расширенная аналитика и Split Pay входят в SubFlow Plus: 100 Stars или $2 в месяц.",
     upgrade: "Оформить Plus",
     later: "Не сейчас",
+    plusPending: "Оплата прошла в Telegram, но Plus ещё не записан. Подождите минуту и откройте список снова.",
   },
   add: {
     title: "Новая подписка",
@@ -111,7 +112,7 @@ export const ru = {
     empty: "Выберите подписку и соберите пул. Ссылка откроет Mini App сразу на этом счёте.",
     share: "Доля",
     noWallet: "Организатору нужно подключить кошелёк, чтобы принять долю.",
-    stage: "Пули хранятся на устройстве. Общий счёт на смарт-контракте — следующий этап.",
+    stage: "Ссылка на пул открывается у друга. Оплата доли идёт на кошелёк организатора.",
   },
   creator: {
     title: "Кабинет автора",
@@ -133,6 +134,8 @@ export const ru = {
     stars: "Оплатить Stars",
     crypto: "Оплатить TON / USDT",
     forever: "Навсегда",
+    saveFailed: "Тариф не записался на сервер. Проверьте, что вы открыли приложение в Telegram.",
+    needAuth: "Локально тариф есть. На сервер он попадёт, когда откроете SubFlow внутри Telegram.",
   },
   profile: {
     title: "Профиль",
@@ -152,7 +155,7 @@ export const ru = {
     vaultTitle: "Сейф автоплатежей",
     vaultText: "Личный контракт, который сам оплачивает сервисы в заданном лимите. Вы в любой момент останавливаете списание и забираете остаток. Это этап v2.0 — ключи на сервер не передаются.",
     plus: "SubFlow Plus",
-    plusOn: "Безлимит подписок включён на этом устройстве.",
+    plusOn: "SubFlow Plus активен.",
     guest: "Гость",
     outside: "Открыто вне Telegram. Кошелёк и оплата Stars заработают внутри бота.",
   },
@@ -169,6 +172,16 @@ export const ru = {
     starsOpened: "Счёт Stars открыт в Telegram",
     starsNeedTg: "Stars оплачиваются только внутри Telegram",
     comment: "Комментарий к переводу: {{comment}}",
+    ref: "Номер платежа: {{id}}",
+    pending: "Транзакция отправлена. Ждём, пока она попадёт в блок.",
+    confirmed: "Оплата подтверждена.",
+    rejected: "Сеть не приняла этот перевод.",
+    needSession: "Оплата через контракт доступна после входа в Telegram.",
+  },
+  checkout: {
+    title: "Оплата тарифа",
+    missing: "Тариф не найден.",
+    noWallet: "Автор ещё не указал кошелёк для выплаты.",
   },
   periods: {
     week: "Неделя",
@@ -259,6 +272,7 @@ export const en: typeof ru = {
     limitText: "Unlimited tracking, extra analytics and Split Pay are SubFlow Plus: 100 Stars or $2 a month.",
     upgrade: "Get Plus",
     later: "Not now",
+    plusPending: "Telegram took the payment, but Plus is not recorded yet. Wait a minute and open the list again.",
   },
   add: {
     title: "New subscription",
@@ -312,7 +326,7 @@ export const en: typeof ru = {
     empty: "Pick a subscription and open a pool. The link lands straight on this bill.",
     share: "Share",
     noWallet: "The organizer needs a connected wallet to receive a share.",
-    stage: "Pools stay on this device. A shared on-chain pool contract comes in the next stage.",
+    stage: "A friend can open this pool from the link. Their share is paid to the organizer's wallet.",
   },
   creator: {
     title: "Creator hub",
@@ -334,6 +348,8 @@ export const en: typeof ru = {
     stars: "Pay with Stars",
     crypto: "Pay with TON / USDT",
     forever: "Forever",
+    saveFailed: "The plan was not saved on the server. Open SubFlow inside Telegram and try again.",
+    needAuth: "The plan is on this device. It reaches the server when you open SubFlow inside Telegram.",
   },
   profile: {
     title: "Profile",
@@ -353,7 +369,7 @@ export const en: typeof ru = {
     vaultTitle: "Autopay vault",
     vaultText: "A personal contract that pays services inside a limit you set. You can stop it and withdraw the rest at any time. This is the v2.0 stage — keys never touch the server.",
     plus: "SubFlow Plus",
-    plusOn: "Unlimited subscriptions are enabled on this device.",
+    plusOn: "SubFlow Plus is active.",
     guest: "Guest",
     outside: "Opened outside Telegram. The wallet and Stars checkout work inside the bot.",
   },
@@ -370,6 +386,16 @@ export const en: typeof ru = {
     starsOpened: "Stars invoice opened in Telegram",
     starsNeedTg: "Stars can only be paid inside Telegram",
     comment: "Transfer comment: {{comment}}",
+    ref: "Payment number: {{id}}",
+    pending: "Transaction sent. Waiting until it lands in a block.",
+    confirmed: "Payment confirmed.",
+    rejected: "The network rejected this transfer.",
+    needSession: "A contract payment is available after you sign in through Telegram.",
+  },
+  checkout: {
+    title: "Plan checkout",
+    missing: "This plan was not found.",
+    noWallet: "The author has not set a payout wallet yet.",
   },
   periods: {
     week: "Week",
