@@ -1,0 +1,6 @@
+{
+  "buildCommand": "npm run build -w @subflow/shared && npm run build -w @subflow/tma",
+  "outputDirectory": "apps/tma/dist",
+  "installCommand": "npm install",
+  "framework": null
+}
